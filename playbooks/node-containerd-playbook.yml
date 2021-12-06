@@ -1,0 +1,227 @@
+---
+- hosts: all
+  become: true
+
+  handlers:
+  - name: containerd status
+    service: name=containerd state=restarted
+
+  - name: Restart SSH
+    service:
+      name: sshd
+      state: restarted
+
+  tasks:
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - net-tools
+      - sshpass
+      - chrony
+
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Install container runtime containerd and its dependecies
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - containerd.io=1.4.3-1
+    notify:
+      - containerd status
+
+  - name: Load netfilter kernel module
+    modprobe:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - overlay
+      - br_netfilter
+
+  - name: Update /etc/containerd/config.toml
+    shell: containerd config default | sudo tee /etc/containerd/config.toml
+
+  - name: Restart containerd service
+    service:
+      name: containerd
+      state: restarted
+
+  - name: Set sysctl
+    sysctl:
+      name: "{{ item }}"
+      value: '1'
+      sysctl_set: true
+      state: present
+      #reload: yes
+    with_items:
+      - net.ipv4.ip_forward
+      - net.bridge.bridge-nf-call-iptables
+      - net.bridge.bridge-nf-call-ip6tables
+    notify:
+      - containerd status
+
+  - name: Enable Chrony
+    service:
+      name: chrony
+      state: started
+      enabled: true
+
+  - name: Set timezone to America/Denver
+    timezone:
+      name: America/Denver
+
+  - name: Remove swapfile from /etc/fstab
+    mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+    with_items:
+      - swap
+      - none
+
+  - name: Disable swap
+    command: swapoff -a
+    when: ansible_swaptotal_mb > 0
+
+  - name: Add /etc/host entries
+    lineinfile:
+      path: /etc/hosts
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - '10.0.1.131 controller-01'
+      - '10.0.1.132 controller-02'
+      - '10.0.1.133 controller-03'
+      - '10.0.1.134 worker-01'
+      - '10.0.1.135 worker-02'
+      - '10.0.1.136 worker-03'
+      - '10.0.1.137 worker-04'
+      - '10.0.1.130 kubelb-01'
+      - '192.168.60.131 controller-01-priv'
+      - '192.168.60.132 controller-02-priv'
+      - '192.168.60.133 controller-03-priv'
+      - '192.168.60.134 worker-01-priv'
+      - '192.168.60.135 worker-02-priv'
+      - '192.168.60.136 worker-03-priv'
+      - '192.168.60.137 worker-04-priv'
+      - '192.168.60.130 kubelb-01-priv'
+
+  - name: Add an apt signing key for Kubernetes
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Adding apt repository for Kubernetes
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+      filename: kubernetes.list
+
+  - name: Install Kubernetes binaries
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+        #- kubelet=1.19.9-00
+        #- kubeadm=1.19.9-00
+        #- kubectl=1.19.9-00
+        - kubelet=1.21.2-00
+        - kubeadm=1.21.2-00
+        - kubectl=1.21.2-00
+
+  - name: Mark Docker and Kubernetes Packages Hold
+    dpkg_selections:
+      name: "{{ item }}"
+      selection: hold
+    with_items:
+      - kubelet
+      - kubeadm
+      - kubectl
+      - containerd.io
+
+  - name: Create /etc/default/kubelet file
+    file:
+      path: /etc/default/kubelet
+      state: touch
+      mode: '0644'
+
+  - name: Configure node ip
+    lineinfile:
+      path: /etc/default/kubelet
+      line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
+
+  - name: Allow ssh to host
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regex: '^PasswordAuthentication'
+      line: 'PasswordAuthentication yes'
+    notify:
+      - Restart SSH
+
+  - name: Create kubectl/bash completion
+    shell: kubectl completion bash > /tmp/kubectl
+
+  - name: Move kubectl shell completion file to correct location
+    command: mv /tmp/kubectl /etc/bash_completion.d/kubectl
+    become: true
+
+  - name: Add set -o vi to my .bashrc
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      regexp: '^set -o vi'
+      line: set -o vi
+
+  - name: Set vim as my default editor
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      line: export EDITOR=vim
+      insertbefore: 'set -o vi'
+
+  - name: Restart kubelet
+    service:
+      name: kubelet
+      daemon_reload: true
+      state: restarted
+
+  - name: Copy the join command to server location
+    copy: src=join-command dest=/tmp/join-command.sh mode=0755
+
+  - name: Join the node to cluster
+    command: sh /tmp/join-command.sh
+
+  - name: Start Proxy
+    shell: kubectl proxy --address='0.0.0.0' --accept-hosts='^*$' &
+
+  - name: Remove unnecessary apt repo files
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /etc/apt/sources.list.d/kubernetes.list

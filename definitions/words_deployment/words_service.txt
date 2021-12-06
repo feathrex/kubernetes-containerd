@@ -1,0 +1,10 @@
+# Create services for words app
+kubectl expose deployment db --port=5432
+kubectl expose deployment web --port=80 --type=NodePort
+kubectl expose deployment words --port=8080
+
+# Or
+
+kubectl create service clusterip db --tcp=5432
+kubectl create service nodeport web --tcp=80
+kubectl create service clusterip words --tcp=8080

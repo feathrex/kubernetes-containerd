@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: littletomcat
+  name: littletomcat
+  namespace: default
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: littletomcat
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: littletomcat
+    spec:
+      containers:
+      - image: tomcat
+        name: tomcat
+        resources: {}

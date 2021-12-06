@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpenv
+  labels:
+    app: httpenv
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: httpenv
+  template:
+    metadata:
+      labels:
+        app: httpenv
+    spec:
+      containers:
+      - name: httpenv
+        image: bretfisher/httpenv
+        ports:
+        #- containerPort: 80
+         - containerPort: 8888

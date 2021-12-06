@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: my-nginx
+    location: NorthAmerica
+    type: front-end
+  name: my-nginx-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: my-nginx
+  template:
+    metadata:
+      labels:
+        app: my-nginx
+    spec:
+      containers:
+        - image: nginx:1.17.1
+          name: nginx
+          resources:
+          ports:
+            - containerPort: 80

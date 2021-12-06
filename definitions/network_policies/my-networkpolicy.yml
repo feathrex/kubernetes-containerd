@@ -1,0 +1,23 @@
+# As is this network policy will DENY all traffic
+#
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: my-networkpolicy
+  namespace: np-test
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+# This will allow access via label selector. Label was created via CLI
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          team: testing-team
+    ports:
+    - protocol: TCP
+      port: 80

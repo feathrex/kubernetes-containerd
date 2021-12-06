@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mydemo-pod
+  labels:
+    app: mydemo
+    type: front-end
+    department: Operations
+    location: my-desktop
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.19.2
+      ports:
+        - containerPort: 80

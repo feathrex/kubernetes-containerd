@@ -1,0 +1,18 @@
+---
+- name: generate SSH key
+  hosts: all
+  become: false
+  gather_facts: true
+
+  tasks:
+  - name: Add set -o vi to my .bashrc
+    lineinfile:
+      dest: ~/.bashrc
+      regexp: '^set -o vi'
+      line: set -o vi
+
+  - name: Set vim as my default editor
+    lineinfile:
+      dest: ~/.bashrc
+      line: export EDITOR=vim
+      insertbefore: 'set -o vi'

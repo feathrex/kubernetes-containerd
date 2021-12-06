@@ -1,0 +1,181 @@
+---
+- hosts: all
+  become: true
+
+  handlers:
+  - name: containerd status
+    service: name=containerd state=restarted
+
+  - name: Restart SSH
+    service:
+      name: sshd
+      state: restarted
+
+  - name: Restart nginx
+    service:
+      name: nginx
+      state: restarted
+
+  tasks:
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - net-tools
+      - sshpass
+      - chrony
+      - nginx
+        #- virtualbox-guest-utils
+        #- virtualbox-guest-dkms
+
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Load netfilter kernel module
+    modprobe:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - overlay
+      - br_netfilter
+
+  - name: Set sysctl
+    sysctl:
+      name: "{{ item }}"
+      value: '1'
+      sysctl_set: true
+      state: present
+      #reload: yes
+    with_items:
+      - net.ipv4.ip_forward
+      - net.bridge.bridge-nf-call-iptables
+      - net.bridge.bridge-nf-call-ip6tables
+
+  - name: Enable Chrony
+    service:
+      name: chrony
+      state: started
+      enabled: true
+
+  - name: Enable nginx
+    service:
+      name: nginx
+      state: started
+      enabled: true
+
+  - name: Set timezone to America/Denver
+    timezone:
+      name: America/Denver
+
+  - name: Add /etc/host entries
+    lineinfile:
+      path: /etc/hosts
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - '10.0.1.121 controller-01'
+      - '10.0.1.122 controller-02'
+      - '10.0.1.123 controller-03'
+      - '10.0.1.124 worker-01'
+      - '10.0.1.125 worker-02'
+      - '10.0.1.126 worker-03'
+      - '10.0.1.127 worker-04'
+      - '10.0.1.119 kubelb-01'
+      - '192.168.45.121 controller-01-priv'
+      - '192.168.45.122 controller-02-priv'
+      - '192.168.45.123 controller-03-priv'
+      - '192.168.45.124 worker-01-priv'
+      - '192.168.45.125 worker-02-priv'
+      - '192.168.45.126 worker-03-priv'
+      - '192.168.45.127 worker-04-priv'
+      - '192.168.45.119 kubelb-01-priv'
+
+  - name: Create /etc/kubernetes/pki directory.
+    file:
+      path: /etc/kubernetes/pki
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Create /etc/nginx/tcpconf.d directory.
+    file:
+      path: /etc/nginx/tcpconf.d
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Copy ca.pem to /etc/kubernetes/pki
+    copy:
+      src: /home/feathrex/Documents/Udemy/kubernetes-multiha/files/ca.pem
+      dest: /etc/kubernetes/pki
+
+  #- name: Fetch /etc/kubernetes/pki/ca.pem from controller-01
+  # fetch:
+  #   src: /etc/kubernetes/pki/ca.crt
+  #   dest: /etc/kubernetes/pki/ca.pem
+  #   dest: /tmp/fetched_file
+  #   flat: true
+  # delegate_to: controller-01
+
+  - name: Copy nginx.conf file from /vagrant
+    copy:
+      #src: /vagrant/files/nginx.conf
+      dest: /etc/nginx/tcpconf.d/kubernetes.conf
+      owner: root
+      group: root
+      mode: 0755
+      content: |
+        stream {
+          upstream kubernetes {
+            server 192.168.45.121:6443;
+            server 192.168.45.122:6443;
+            server 192.168.45.123:6443;
+          }
+
+          server {
+            listen 6443;
+            listen 443;
+            proxy_pass kubernetes;
+          }
+        }
+
+  - name: Update /etc/nginx/nginx.conf
+    lineinfile:
+      path: /etc/nginx/nginx.conf
+      insertafter: EOF
+      line: 'include /etc/nginx/tcpconf.d/*;'
+    notify:
+      - Restart nginx
+
+  - name: Allow ssh to host
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regex: '^PasswordAuthentication'
+      line: 'PasswordAuthentication yes'
+    notify:
+      - Restart SSH
+
+  - name: Add set -o vi to my .bashrc
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      regexp: '^set -o vi'
+      line: set -o vi
+
+  - name: Set vim as my default editor
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      line: export EDITOR=vim
+      insertbefore: 'set -o vi'
