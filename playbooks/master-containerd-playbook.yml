@@ -8,11 +8,6 @@
       name: containerd
       state: restarted
 
-  - name: Restart nginx
-    service:
-      name: nginx
-      state: restarted
-
   - name: Restart SSH
     service:
       name: sshd
@@ -25,6 +20,17 @@
       state: restarted
 
   tasks:
+  - name: Add an apt signing key for Kubernetes
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Adding apt repository for Kubernetes
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+      filename: kubernetes
+
   - name: Install packages that allow apt to be used over HTTPS
     apt:
       name: "{{ packages }}"
@@ -53,8 +59,6 @@
       - sysstat
       - tree
       - sysstat
-      - nginx
-
 
   - name: Upgrade the OS (apt-get dist-upgrade)
     apt:
@@ -68,6 +72,9 @@
     vars:
       packages:
       - containerd
+      - kubelet=1.21.2-00
+      - kubeadm=1.21.2-00
+      - kubectl=1.21.2-00
 
   - name: Load netfilter kernel module
     modprobe:
@@ -87,8 +94,8 @@
 
   - name: Update /etc/containerd/config.toml
     shell: containerd config default | sudo tee /etc/containerd/config.toml
-    notify:
-      - Restart containerd
+#   notify:
+#     - Restart containerd
 
   - name: Update /etc/containerd/config.toml
     lineinfile:
@@ -98,10 +105,10 @@
     notify:
       - Restart containerd
 
-  - name: Restart containerd service
-    service:
-      name: containerd
-      state: restarted
+# - name: Restart containerd service
+#   service:
+#     name: containerd
+#     state: restarted
 
   - name: Install stern
     get_url:
@@ -179,7 +186,7 @@
       - '10.0.1.136 worker-03'
       - '10.0.1.137 worker-04'
       - '10.0.1.130 kubelb-01'
-      - '192.168.60.131 controller-01-priv'
+      - '192.168.60.131 controller-01-priv kube-master'
       - '192.168.60.132 controller-02-priv'
       - '192.168.60.133 controller-03-priv'
       - '192.168.60.134 worker-01-priv'
@@ -188,30 +195,30 @@
       - '192.168.60.137 worker-04-priv'
       - '192.168.60.130 kubelb-01-priv'
 
-  - name: Add an apt signing key for Kubernetes
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      state: present
+# - name: Add an apt signing key for Kubernetes
+#   apt_key:
+#     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+#     state: present
 
-  - name: Adding apt repository for Kubernetes
-    apt_repository:
-      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
-      state: present
-      filename: kubernetes
+# - name: Adding apt repository for Kubernetes
+#   apt_repository:
+#     repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+#     state: present
+#     filename: kubernetes
 
-  - name: Install Kubernetes binaries
-    apt:
-      name: "{{ packages }}"
-      state: present
-      update_cache: true
-    vars:
-      packages:
+# - name: Install Kubernetes binaries
+#   apt:
+#     name: "{{ packages }}"
+#     state: present
+#     update_cache: true
+#   vars:
+#     packages:
         #- kubelet=1.19.1-00   # =1.16.15-00
         #- kubeadm=1.19.1-00   # =1.16.15-00
         #- kubectl=1.19.1-00   # =1.16.15-00
-        - kubelet=1.21.2-00   # =1.16.15-00
-        - kubeadm=1.21.2-00   # =1.16.15-00
-        - kubectl=1.21.2-00   # =1.16.15-00
+        #- kubelet=1.21.2-00   # =1.16.15-00
+        #- kubeadm=1.21.2-00   # =1.16.15-00
+        #- kubectl=1.21.2-00   # =1.16.15-00
 
   - name: Mark Docker and Kubernetes Packages Hold
     dpkg_selections:
@@ -250,7 +257,13 @@
     command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
             --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
             --pod-network-cidr=10.240.0.0/16
+    when: ansible_facts['hostname'] == "controller-01"
 
+    # Good kubeadm init command
+    #
+    #command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
+    #       --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
+    #       --pod-network-cidr=10.240.0.0/16
     #command: kubeadm init --apiserver-advertise-address="192.168.60.131" \
     #         --apiserver-cert-extra-sans="192.168.60.131"  --node-name={{ ansible_hostname }} \
     #         --pod-network-cidr=10.240.0.0/16
@@ -266,16 +279,25 @@
   - name: Generate join command
     command: kubeadm token create --print-join-command
     register: join_command
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Copy join command to local file
     local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+    when: ansible_facts['hostname'] == "controller-01"
+
+  - name: Setup kubeconfig for vagrant user
+    file:
+      path: /home/vagrant/.kube
+      state: directory
+      owner: vagrant
+      group: vagrant
 
   - name: Setup kubeconfig for vagrant user
     command: "{{ item }}"
     with_items:
-      - mkdir -p /home/vagrant/.kube
       - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
       - chown vagrant:vagrant /home/vagrant/.kube/config
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Add set -o vi to my .bashrc
     become: false
@@ -330,19 +352,24 @@
 
   - name: Install calico pod network
     become: false
-    shell: kubectl create -f https://docs.projectcalico.org/v3.19/manifests/calico.yaml
+    shell: kubectl create -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
+    #shell: kubectl create -f https://docs.projectcalico.org/v3.19/manifests/calico.yaml
     #shell: kubectl create -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Install Kubernetes Dashboard
     become: false
     shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Create kubectl/bash completion
     shell: kubectl completion bash > /tmp/kubectl
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Move kubectl shell completion file to correct location
     shell: mv /tmp/kubectl /etc/bash_completion.d/kubectl
     become: true
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Copy ca.pem from controller-01 to local
     fetch:
@@ -350,33 +377,6 @@
       dest: /home/feathrex/Documents/Udemy/kubernetes-multiha/files/ca.pem
       flat: true
     when: ansible_facts['hostname'] == "controller-01"
-
-  - name: Copy nginx.conf file from /vagrant
-    copy:
-      dest: /etc/nginx/sites-available/kubernetes.default.svc.cluster.local
-      owner: root
-      group: root
-      mode: 0755
-      content: |
-        server {
-          listen     80;
-          server_name kubernetes.default.svc.cluster.local;
-
-          location /healthz {
-            proxy_pass                    https://127.0.0.1:6433/healthz;
-            proxy_ssl_trusted_certificate /etc/kubernetes/pki/ca.crt;
-          }
-        }
-    when: ansible_facts['hostname'] == "controller-01"
-
-  - name: Create sym-link for nginx
-    file:
-      src: /etc/nginx/sites-available/kubernetes.default.svc.cluster.local
-      dest: /etc/nginx/sites-enabled/kubernetes.default.svc.cluster.local
-      state: link
-    when: ansible_facts['hostname'] == "controller-01"
-    notify:
-      - Restart nginx
 
   - name: Remove unnecessary apt repo files
     file:

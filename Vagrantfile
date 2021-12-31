@@ -44,11 +44,11 @@ Vagrant.configure("2") do |config|
     (1..N).each do |i|
         config.vm.define "worker-0#{i}" do |worker|
             worker.vm.box = IMAGE_NAME
-            worker.vm.network "private_network", ip: "192.168.60.#{i + 33}"
+            worker.vm.network "private_network", ip: "192.168.60.1#{i + 33}"
             worker.vm.hostname = "worker-0#{i}"
             worker.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 33}"
             worker.vm.provision "ansible" do |ansible|
-                ansible.playbook = "playbooks/node-containerd-playbook.yml"
+                ansible.playbook = "playbooks/worker-containerd-playbook.yml"
                 ansible.extra_vars = {
                     node_ip: "192.168.60.1#{i + 33}",
                 }

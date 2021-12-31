@@ -9,4 +9,3 @@ spec:
       image: kodekloud/event-simulator
     - name: image-processor
       image: some-image-processor
-    resource:

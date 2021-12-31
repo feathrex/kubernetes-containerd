@@ -4,9 +4,7 @@ metadata:
   name: multi-container-pod
 spec:
   containers:
-    - name: nginx
-      image: nginx
     - name: redis
       image: redis
-    - name: log-agent
-      image: log-agent
+    - name: simpleweb
+      image: feathrex/simpleweb:v1
