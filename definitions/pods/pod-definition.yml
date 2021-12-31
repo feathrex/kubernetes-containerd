@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: first-pod
+  labels:
+    app: first-app
+    location: Somewhere
+    costcenter: AMER
+    department: Finance
+    environment: Development
+spec:
+  containers:
+    - name: first-pod
+      image: nginx
+  resources:

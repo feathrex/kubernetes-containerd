@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: static-greenbox
+  name: static-greenbox
+spec:
+  containers:
+  - command:
+    - sleep
+    - "3000"
+    image: busybox
+    name: static-greenbox
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never

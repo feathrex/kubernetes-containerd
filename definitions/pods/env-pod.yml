@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-pod
+  namespace: default
+spec:
+  containers:
+  - name: alpine
+    image: alpine
+    imagePullPolicy: Always
+    stdin: true
+    tty: true
+    command: ['sh', '-c', 'echo "configmap: ${CONFIGMAPVAR} secret: ${SECRETVAR}"']
+    #command: ['sh', '-c', 'echo']
+    #args: ['configmap: $CONFIGMAPVAR', 'secret: $SECRETVAR']
+    env:
+    - name: CONFIGMAPVAR
+      valueFrom:
+        configMapKeyRef:
+          name: my-configmap
+          key: key1
+    - name: SECRETVAR
+      valueFrom:
+        secretKeyRef:
+          name: my-secret
+          key: secretkey1
+  restartPolicy: OnFailure

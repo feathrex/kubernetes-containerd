@@ -1,0 +1,141 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+IMAGE_NAME = "ubuntu/focal64"
+N = 4
+
+Vagrant.configure("2") do |config|
+    config.ssh.insert_key = false
+
+    config.vm.provider "virtualbox" do |v|
+        v.memory = 4096
+        v.cpus = 4
+    end
+
+    config.vm.define "k8s-master" do |master|
+        config.vm.synced_folder ".", "/vagrant", disabled: false
+        master.vm.box = IMAGE_NAME
+        master.vm.network "private_network", ip: "192.168.50.10"
+        master.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.110"
+        master.vm.hostname = "k8s-master"
+        master.vm.provision "ansible" do |ansible|
+            ansible.playbook = "playbooks/master-containerd-playbook.yml"
+            ansible.extra_vars = {
+                node_ip: "192.168.50.10",
+            }
+        end
+    end
+
+    (1..N).each do |i|
+        config.vm.define "kube-#{i}" do |kube|
+            kube.vm.box = IMAGE_NAME
+            kube.vm.network "private_network", ip: "192.168.50.#{i + 10}"
+            kube.vm.hostname = "kube-#{i}"
+            kube.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 10}"
+            kube.vm.provision "ansible" do |ansible|
+                ansible.playbook = "playbooks/node-containerd-playbook.yml"
+                ansible.extra_vars = {
+                    node_ip: "192.168.50.#{i + 10}",
+                }
+            end
+        end
+    end
+end
+
+#
+## -*- mode: ruby -*-
+## vi: set ft=ruby :
+#
+#
+#Vagrant.configure("2") do |config|
+#
+#  config.ssh.insert_key = false
+#
+#  config.vm.synced_folder ".", "/vagrant", disabled: true
+#
+#  config.vm.provider :virtualbox do |v|
+#    v.memory = 2048
+#    v.cpus = 4
+#    v.linked_clone = true
+#  end
+#
+#  config.vm.define "mgmt" do |mgmt|
+#    config.vm.synced_folder ".", "/vagrant", disabled: false
+#    mgmt.vm.box = "rhel8_update"
+#    mgmt.vm.hostname = "orc-mgmt.test"
+#    mgmt.vm.network :private_network, ip: "192.168.58.3"
+#    mgmt.vm.provision :shell, path: "scripts/bootstrap-mgmt.sh"
+#  end
+#
+#  # Web server 2 Centos
+#
+#  # Web server 1 Centos
+#  config.vm.define "web1" do |web1|
+#    web1.vm.box = "rhel8_update"
+#    web1.vm.hostname = "orc-web1.test"
+#    web1.vm.network :private_network, ip: "192.168.58.4"
+#    web1.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # Web server 2 Centos
+#  config.vm.define "web2" do |web2|
+#    web2.vm.box = "rhel8_update"
+#    web2.vm.hostname = "orc-web2.test"
+#    web2.vm.network :private_network, ip: "192.168.58.5"
+#    web2.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # DB server 1 Centos
+#  config.vm.define "db1" do |db1|
+#    db1.vm.box = "rhel8_update"
+#    db1.vm.hostname = "orc-db1.test"
+#    db1.vm.network :private_network, ip: "192.168.58.6"
+#    db1.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # Web server 3 Centos
+#  config.vm.define "web3" do |web3|
+#    web3.vm.box = "rhel8_update"
+#    web3.vm.hostname = "orc-web3.test"
+#    web3.vm.network :private_network, ip: "192.168.58.7"
+#    web3.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # Web server 4 Centos
+#  config.vm.define "web4" do |web4|
+#    web4.vm.box = "rhel8_update"
+#    web4.vm.hostname = "orc-web4.test"
+#    web4.vm.network :private_network, ip: "192.168.58.8"
+#    web4.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # Web server 5 Centos
+#  config.vm.define "web5" do |web5|
+#    web5.vm.box = "rhel8_update"
+#    web5.vm.hostname = "orc-web5.test"
+#    web5.vm.network :private_network, ip: "192.168.58.9"
+#    web5.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#  end
+#
+#  # Web server 6 Centos
+#  config.vm.define "web6" do |web6|
+#    web6.vm.box = "rhel8_update"
+#    web6.vm.hostname = "orc-web6.test"
+#    web6.vm.network :private_network, ip: "192.168.58.10"
+#    web6.vm.provision :shell, path: "scripts/bootstrap-web.sh"
+#
+#    config.vm.provider "virtualbox" do |web6|
+#      disk = './additional_disk/secondDisk.vdi'
+#      #disk1 = './additional_disk/thirdDisk.vdi'
+#
+#      unless File.exist?(disk)
+#        web6.customize ['createhd', '--filename', './additional_disk/web6_secondDisk.vdi', '--variant', 'Fixed', '--size', 2 * 1024]
+#        web6.customize ['createhd', '--filename', './additional_disk/web6_thirdDisk.vdi', '--variant', 'Fixed', '--size', 2 * 1024]
+#      end
+#        web6.customize ['storageattach', :id,  '--storagectl', 'SATA', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './additional_disk/web6_secondDisk.vdi']
+#        web6.customize ['storageattach', :id,  '--storagectl', 'SATA', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', './additional_disk/web6_thirdDisk.vdi']
+#    end
+#  end
+#
+#end
+#

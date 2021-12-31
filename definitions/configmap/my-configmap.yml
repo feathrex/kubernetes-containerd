@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  key1: Hello, fucking cruel world!
+  key2: |
+    Test
+    of multiple line
+    key value pair.

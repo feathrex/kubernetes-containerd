@@ -1,0 +1,1 @@
+kubeadm join 192.168.60.131:6443 --token efzcaw.ifsgdx0xyacv394y --discovery-token-ca-cert-hash sha256:36f9212e07f9e13cd6844969eb70f919b19f99c58e949a8db92776cbd6fdcad8 

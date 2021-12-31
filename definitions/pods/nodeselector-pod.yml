@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeselector-pod
+spec:
+  nodeSelector:
+    special: "true"   # Double quotes are necessary because YAML interpreter would interpret single quote 'true' as a boolean
+  containers:
+  - name: nginx
+    image: nginx:1.19.1

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+
+spec:
+  type: ClusterIP # <== Default type
+  ports:
+    - targetPort: 80 # backend is exposed
+      port: 80 # Service is exposed
+  selector:
+    app: myapp
+    type: back-end

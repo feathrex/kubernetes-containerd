@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpleweb-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: my-deploy # The label for the deployment
+  template:
+    metadata:
+      labels:
+        app: my-deploy # The label for the pod in the template MUST MATCH the label for the deployment
+    spec:
+      containers:
+        - name: simpleweb-pod
+          image: feathrex/simpleweb:v1
+          ports:
+            - containerPort: 8080
+      resources:
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: hello-world
+spec:
+  selector:
+    app: my-deploy
+  ports:
+    - protocol: "TCP"
+      # Port accessible inside cluster
+      port: 8080
+      # Port to forward to inside the pod
+      targetPort: 8080
+      # Port accessible outside cluster
+      nodePort: 32001
+  type: NodePort

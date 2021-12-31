@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alpine-sleeper-pod
+spec:
+  containers:
+    - name: alpine-sleeper
+      image: alpine-sleeper
+      args: ["10"]
+  resources:

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2021-01-05T00:30:32Z"
+  labels:
+    app: words
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app: {}
+      f:spec:
+        f:ports:
+          .: {}
+          k:{"port":8080,"protocol":"TCP"}:
+            .: {}
+            f:name: {}
+            f:port: {}
+            f:protocol: {}
+            f:targetPort: {}
+        f:selector:
+          .: {}
+          f:app: {}
+        f:sessionAffinity: {}
+        f:type: {}
+    manager: kubectl-create
+    operation: Update
+    time: "2021-01-05T00:30:32Z"
+  name: words
+  namespace: default
+  resourceVersion: "12795"
+  selfLink: /api/v1/namespaces/default/services/words
+  uid: 196efc15-a4d6-42bb-bb9f-daec0b4b0810
+spec:
+  NodePort: 10.104.32.200
+  ports:
+  - name: "8080"
+    port: 8080
+    protocol: TCP
+    targetPort: ""
+  selector:
+    app: words
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
