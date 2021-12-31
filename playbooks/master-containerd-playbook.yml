@@ -94,8 +94,6 @@
 
   - name: Update /etc/containerd/config.toml
     shell: containerd config default | sudo tee /etc/containerd/config.toml
-#   notify:
-#     - Restart containerd
 
   - name: Update /etc/containerd/config.toml
     lineinfile:
@@ -104,11 +102,6 @@
       line: 'SystemdCgroup = true'
     notify:
       - Restart containerd
-
-# - name: Restart containerd service
-#   service:
-#     name: containerd
-#     state: restarted
 
   - name: Install stern
     get_url:
@@ -133,7 +126,7 @@
       value: '1'
       sysctl_set: true
       state: present
-      #reload: yes
+      reload: yes
     with_items:
       - net.ipv4.ip_forward
       - net.bridge.bridge-nf-call-iptables
@@ -195,31 +188,6 @@
       - '192.168.60.137 worker-04-priv'
       - '192.168.60.130 kubelb-01-priv'
 
-# - name: Add an apt signing key for Kubernetes
-#   apt_key:
-#     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-#     state: present
-
-# - name: Adding apt repository for Kubernetes
-#   apt_repository:
-#     repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
-#     state: present
-#     filename: kubernetes
-
-# - name: Install Kubernetes binaries
-#   apt:
-#     name: "{{ packages }}"
-#     state: present
-#     update_cache: true
-#   vars:
-#     packages:
-        #- kubelet=1.19.1-00   # =1.16.15-00
-        #- kubeadm=1.19.1-00   # =1.16.15-00
-        #- kubectl=1.19.1-00   # =1.16.15-00
-        #- kubelet=1.21.2-00   # =1.16.15-00
-        #- kubeadm=1.21.2-00   # =1.16.15-00
-        #- kubectl=1.21.2-00   # =1.16.15-00
-
   - name: Mark Docker and Kubernetes Packages Hold
     dpkg_selections:
       name: "{{ item }}"
@@ -255,8 +223,8 @@
 
   - name: Initialize the Kubernetes cluster using kubeadm
     command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
-            --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
-            --pod-network-cidr=10.240.0.0/16
+             --apiserver-cert-extra-sans={{ node_ip }} --control-plane-endpoint=kube-master \
+             --node-name={{ ansible_hostname }}  --pod-network-cidr=10.240.0.0/16
     when: ansible_facts['hostname'] == "controller-01"
 
     # Good kubeadm init command

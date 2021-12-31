@@ -1,1 +1,1 @@
-kubeadm join 192.168.60.131:6443 --token efzcaw.ifsgdx0xyacv394y --discovery-token-ca-cert-hash sha256:36f9212e07f9e13cd6844969eb70f919b19f99c58e949a8db92776cbd6fdcad8 
+kubeadm join kube-master:6443 --token mm2yym.ozv1piwlw9by73ef --discovery-token-ca-cert-hash sha256:7c6fb42627d1949f706d2ad20f74be0a1b3d6433c1ebd6b1415e08154e206059 
