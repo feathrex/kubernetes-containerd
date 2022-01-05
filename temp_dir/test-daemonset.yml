@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: test-daemonset
+  namespace: default
+  labels:
+    app: alpine-daemonset-test
+spec:
+  selector:
+    matchLabels:
+      name: alpine-ds
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: alpine-ds
+    spec:
+      containers:
+      - name: alpine-container
+        image: alpine:3.14.3
+        command: ["sh", "-c", "sleep 1d"]

@@ -22,7 +22,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: hello-world
+  name: hello-world2
 spec:
   selector:
     app: my-deploy

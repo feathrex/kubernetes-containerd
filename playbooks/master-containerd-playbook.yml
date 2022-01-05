@@ -223,26 +223,28 @@
 
   - name: Initialize the Kubernetes cluster using kubeadm
     command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
-             --apiserver-cert-extra-sans={{ node_ip }} --control-plane-endpoint=kube-master \
+             --apiserver-cert-extra-sans={{ node_ip }} \
              --node-name={{ ansible_hostname }}  --pod-network-cidr=10.240.0.0/16
     when: ansible_facts['hostname'] == "controller-01"
 
-    # Good kubeadm init command
-    #
-    #command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
-    #       --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
-    #       --pod-network-cidr=10.240.0.0/16
-    #command: kubeadm init --apiserver-advertise-address="192.168.60.131" \
-    #         --apiserver-cert-extra-sans="192.168.60.131"  --node-name={{ ansible_hostname }} \
-    #         --pod-network-cidr=10.240.0.0/16
+
+#     Good kubeadm init command
+#    
+#   command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
+#            --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
+#            --pod-network-cidr=10.240.0.0/16
+#   command: kubeadm init --apiserver-advertise-address="192.168.60.131" \
+#            --apiserver-cert-extra-sans="192.168.60.131"  --node-name={{ ansible_hostname }} \
+#            --pod-network-cidr=10.240.0.0/16
 
 
-  - name: Update /var/lib/kubelet/kubeadm-flags.env
-    lineinfile:
-      path: /var/lib/kubelet/kubeadm-flags.env
-      regexp: '^KUBELET_KUBEADM_ARGS'
-      line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
-    when: ansible_facts['hostname'] == "controller-01"
+# - name: Update /var/lib/kubelet/kubeadm-flags.env
+#   lineinfile:
+#     path: /var/lib/kubelet/kubeadm-flags.env
+#     regexp: '^KUBELET_KUBEADM_ARGS'
+#     line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --container-runtime=remote \
+#           --container-runtime-endpoint=/var/run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
+#   when: ansible_facts['hostname'] == "controller-01"
 
   - name: Generate join command
     command: kubeadm token create --print-join-command
