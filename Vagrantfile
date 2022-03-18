@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 IMAGE_NAME = "ubuntu/focal64"
-N = 4
+N = 5
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
@@ -20,7 +20,8 @@ Vagrant.configure("2") do |config|
       kubelb.vm.provision "ansible" do |ansible|
       ansible.playbook = "playbooks/node-lb-playbook.yml"
         ansible.extra_vars = {
-        node_ip: "192.168.60.130",
+        #node_ip: "192.168.60.130",
+        node_ip: "10.0.1.130",
       }
       end
     end
@@ -35,7 +36,8 @@ Vagrant.configure("2") do |config|
         master.vm.provision "ansible" do |ansible|
             ansible.playbook = "playbooks/master-containerd-playbook.yml"
             ansible.extra_vars = {
-                node_ip: "192.168.60.1#{i + 30}",
+                #node_ip: "192.168.60.1#{i + 30}",
+              node_ip: "10.0.1.1#{i + 30}",
             }
         end
       end
@@ -50,7 +52,8 @@ Vagrant.configure("2") do |config|
             worker.vm.provision "ansible" do |ansible|
                 ansible.playbook = "playbooks/worker-containerd-playbook.yml"
                 ansible.extra_vars = {
-                    node_ip: "192.168.60.1#{i + 33}",
+                    #node_ip: "192.168.60.1#{i + 33}",
+                    node_ip: "10.0.1.1#{i + 33}",
                 }
             end
         end

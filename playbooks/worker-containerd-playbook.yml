@@ -3,8 +3,10 @@
   become: true
 
   handlers:
-  - name: containerd status
-    service: name=containerd state=restarted
+  - name: Restart containerd
+    service:
+      name: containerd
+      state: restarted
 
   - name: Restart SSH
     service:
@@ -42,17 +44,6 @@
       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
       state: present
 
-  - name: Install container runtime containerd and its dependecies
-    apt:
-      name: "{{ packages }}"
-      state: present
-      update_cache: true
-    vars:
-      packages:
-      - containerd.io
-    notify:
-      - containerd status
-
   - name: Load netfilter kernel module
     modprobe:
       name: "{{ item }}"
@@ -61,8 +52,36 @@
       - overlay
       - br_netfilter
 
+  - name: Create /etc/containerd
+    file:
+      path: /etc/containerd
+      state: directory
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: Install container runtime containerd and its dependecies
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+        #- containerd.io
+      - containerd
+    notify:
+      - Restart containerd
+
   - name: Update /etc/containerd/config.toml
     shell: containerd config default | sudo tee /etc/containerd/config.toml
+
+  - name: Update /etc/containerd/config.toml
+    lineinfile:
+      path: /etc/containerd/config.toml
+      regex: 'SystemdCgroup'
+      line: 'SystemdCgroup = true'
+    notify:
+      - Restart containerd
 
   - name: Restart containerd service
     service:
@@ -81,7 +100,7 @@
       - net.bridge.bridge-nf-call-iptables
       - net.bridge.bridge-nf-call-ip6tables
     notify:
-      - containerd status
+      - Restart containerd
 
   - name: Enable Chrony
     service:
@@ -112,7 +131,7 @@
       line: "{{ item }}"
       state: present
     with_items:
-      - '10.0.1.131 controller-01'
+      - '10.0.1.131 controller-01 kube-master'
       - '10.0.1.132 controller-02'
       - '10.0.1.133 controller-03'
       - '10.0.1.134 worker-01'
@@ -120,7 +139,7 @@
       - '10.0.1.136 worker-03'
       - '10.0.1.137 worker-04'
       - '10.0.1.130 kubelb-01'
-      - '192.168.60.131 controller-01-priv kube-master'
+      - '192.168.60.131 controller-01-priv'
       - '192.168.60.132 controller-02-priv'
       - '192.168.60.133 controller-03-priv'
       - '192.168.60.134 worker-01-priv'
@@ -162,7 +181,7 @@
       - kubelet
       - kubeadm
       - kubectl
-      - containerd.io
+      - containerd
 
   - name: Create /etc/default/kubelet file
     file:
@@ -225,3 +244,16 @@
       state: absent
     with_items:
       - /etc/apt/sources.list.d/kubernetes.list
+
+  - name: Create /etc/crictl.yaml
+    copy:
+      dest: /etc/crictl.yaml
+      owner: root
+      group: root
+      mode: 0644
+      content: |
+        runtime-endpoint: unix:///run/containerd/containerd.sock
+        image-endpoint: unix:///run/containerd/containerd.sock
+        timeout: 2
+        debug: false
+        pull-image-on-create: true

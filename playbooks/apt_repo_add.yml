@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Add repo
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present

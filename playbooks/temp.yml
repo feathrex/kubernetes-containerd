@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Download Helm Install Script
+    get_url:
+      #src: https://get.helm.sh/helm-v3.7.0-linux-amd64.tar.gz
+      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      dest: /tmp/get_helm.sh
+      owner: root
+      group: root
+      mode: '0755'
+
+  - name: Execute Helm Install Script
+    command: bash /tmp/get_helm.sh
