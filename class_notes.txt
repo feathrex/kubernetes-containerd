@@ -162,6 +162,14 @@ Kubernetes
 
           ps -ef|grep kube-apiserver
 
+      Basic etcdctl commands:
+
+      List all keys in etcd (note that myetcdctl is an alias that I use)
+      myetcdctl get / --prefix --keys-only
+
+      List users:
+      myetcdctl get / users
+
 
     kube-scheduler
 
@@ -174,8 +182,11 @@ Kubernetes
       which nodes.
 
       The scheduler goes through two phases in determining pod placement.
+        Filter Nodes:
         1. Filter nodes out that don't fit physical requirements i.e.
            memory/cpu for the pods.
+
+        Rank Nodes:
         2. Rank nodes from 0 to 10 after placing the pod on the node.
 
         Also consider resource requirements and limits.
@@ -198,15 +209,7 @@ Kubernetes
         To restrict a pod to run on a particular node.
 
 
-
-      Filter Nodes
-
-
-      Rank Nodes
-
-
       Resource Requirements
-
 
 
       Manual Scheduling
@@ -228,7 +231,7 @@ Kubernetes
 
       Node Controller
         Node Monitor Period is 5 seconds
-        Node Monitor Grade Period is 40 seconds
+        Node Monitor Grace Period is 40 seconds
         POD eviction timeout is 5 minutes
 
       Replication Controller
@@ -243,6 +246,7 @@ Kubernetes
         Stateful-Set
         PV-Protection Controller
         Service Account Controller
+        Cronjob
         Job-controller
         Service-Account Controller
         PV-Binder-Controller
@@ -266,12 +270,15 @@ Kubernetes
 
 
     kubelet
-      Runs on each worker node.
+      Runs on each worker node. Port 10250
       The 'captain' on the ship.
-      Listens for instructions from the api-server
+      Listens for instructions from the api-server on port 10250
       Registers a worker node in a kubernetes cluster
       Creates/Manages containers/pods.
       Monitors nodes and Pods.
+      Configuration files are located under:
+        /etc/kubernetes
+        /var/lib/kubelet
 
       cAdvisor a sub-component of kubelet responsible for collecting performance
       metrics from pods.

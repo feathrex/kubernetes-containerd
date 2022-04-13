@@ -203,12 +203,6 @@
 #     - kubectl
 #     - containerd
 
-# - name: Create /etc/default/kubelet file
-#   file:
-#     path: /etc/default/kubelet
-#     state: touch
-#     mode: '0644'
-
   - name: Configure node ip
     lineinfile:
       path: /etc/default/kubelet
@@ -242,7 +236,6 @@
 #   command: kubeadm init --apiserver-advertise-address="192.168.60.131" \
 #            --apiserver-cert-extra-sans="192.168.60.131"  --node-name={{ ansible_hostname }} \
 #            --pod-network-cidr=10.240.0.0/16
-
 
 # - name: Update /var/lib/kubelet/kubeadm-flags.env
 #   lineinfile:
@@ -328,8 +321,6 @@
   - name: Install calico pod network
     become: false
     shell: kubectl create -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
-    #shell: kubectl create -f https://docs.projectcalico.org/v3.19/manifests/calico.yaml
-    #shell: kubectl create -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
     when: ansible_facts['hostname'] == "controller-01"
 
   - name: Install Kubernetes Dashboard

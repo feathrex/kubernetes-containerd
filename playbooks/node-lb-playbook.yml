@@ -112,13 +112,13 @@
       src: /home/feathrex/Documents/Udemy/kubernetes-multiha/files/ca.pem
       dest: /etc/kubernetes/pki
 
-  #- name: Fetch /etc/kubernetes/pki/ca.pem from controller-01
-  # fetch:
-  #   src: /etc/kubernetes/pki/ca.crt
-  #   dest: /etc/kubernetes/pki/ca.pem
-  #   dest: /tmp/fetched_file
-  #   flat: true
-  # delegate_to: controller-01
+#  - name: Fetch /etc/kubernetes/pki/ca.pem from controller-01
+#   fetch:
+#     src: /etc/kubernetes/pki/ca.crt
+#     dest: /etc/kubernetes/pki/ca.pem
+#     dest: /tmp/fetched_file
+#     flat: true
+#   delegate_to: controller-01
 
   - name: Copy haproxy.cfg file from /vagrant
     copy:
