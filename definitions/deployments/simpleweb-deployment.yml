@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpleweb-deployment
+  labels:
+    app: mywebby-app
+    tier: production
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web # The label for the deployment
+  template:
+    metadata:
+      labels:
+        app: web # The label for the pod in the template MUST MATCH the label for the deployment
+    spec:
+      containers:
+        - name: simpleweb-container
+          image: feathrex/simpleweb:v1
+          ports:
+            - containerPort: 8080
+      resources:
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: simpleweb-service
+spec:
+  selector:
+    app: web # This label for the service MUST match the label in the pod/deployment 
+  ports:
+    - protocol: "TCP"
+      # Port accessible inside cluster
+      port: 8080
+      # Port to forward to inside the pod
+      targetPort: 8080
+      # Port accessible outside cluster
+      nodePort: 32001
+  type: NodePort

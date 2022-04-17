@@ -78,7 +78,7 @@ Kubernetes
   An open source system for automating deployment, scaling and management of
   containerized applications.
 
-  APIs are declaritive not imparitive
+  APIs are declaritive not imperative.
 
   Control Plane
     A set of services that control the kubernetes cluster.
@@ -234,7 +234,7 @@ Kubernetes
         Node Monitor Grace Period is 40 seconds
         POD eviction timeout is 5 minutes
 
-      Replication Controller
+      Replication Controller (older depricated need to use replicaSet instead)
         Monitors the status of replicatSets ensuring that desired number of pods
         are available at all times within the set.
 
@@ -267,6 +267,8 @@ Kubernetes
       Manages communication for services between nodes within the cluster.
       Manages communication between pods
       Uses IPtables rules to forward traffic to correct pod
+      Pod network is a flat virtual network. All pods and services can communicate
+      with each other.
 
 
     kubelet
@@ -393,9 +395,8 @@ Kubernetes Components
 
     Resource Limits:
       Provide a way for you to limit the amount of resources your container(s) can
-      use. The container runtime
-      is responsible for enforcing these limits and different container runtimes
-      do this differently.
+      use. The container runtime is responsible for enforcing these limits and
+      different container runtimes do this differently.
 
       To set resource limits you must set the kind LimitRange in the name space
       for example:
@@ -550,6 +551,10 @@ Kubernetes Kind List:
     What is a service?
       Provide a way to expose an application running as a set of pods.
 
+      Enable communication b/w various components within and outside of an
+      application. Services help connection applications together with other
+      applications and users.
+
       Pods are ephemeral and are destroyed frequently.
 
       A service provides a stable/persistent IP address to access the pods.
@@ -568,6 +573,24 @@ Kubernetes Kind List:
           the service uses selector(s)
         Pods are identified via selectors which are defined in the metadata portion
         of the YAML file.
+
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: myapp-service
+        spec:
+          type: NodePort
+          # This object is an ARRAY and you can have multiple elements in the array
+          ports:
+            - targetPort: 80 # Port on the POD
+              port: 80 # Port on the SERVICE
+              nodePort: 30008 # Port on the NODE
+          # The selector connects the SERVICE to the PODS running the application
+          selector:
+            app: myapp # Must match labels in pod definition spec
+            type: front-end # Must match labels in pod definition spec
+
 
       Endpoints are the backend entities to which Services route traffic. For a
       service that routes traffic to mutilple pods, each pod will have an endpoint
@@ -673,11 +696,13 @@ Kubernetes Kind List:
       containers in the form of mounted volumes. This will cause the configuration
       data to appear in files available to the container file system.
 
+
   Secrets
     kind: Secret
     Similar to ConfigMap, but used to securely store data like user passwords, SSL
     certs, etc..
     base64 encoding
+
 
   Volumes
     Physical storage attached/mounted to pods.
@@ -764,7 +789,6 @@ Kubernetes Kind List:
     Labels and Selectors are KEY for ReplicaSets and allows a ReplicaSet to know
     which pods to monitor in the event of pod failure.
     The "selector" is a key requirement for ReplicaSets
-
 
 
   DaemonSet
@@ -877,7 +901,6 @@ Kubernetes Kind List:
       Anything where our incident response would be to "just restart/reboot it"
 
 
-
     Readiness Probes
       Are used to determine when a container is ready to accept requests.
       (only needed if pods are used in a service)
@@ -957,7 +980,6 @@ Networking Model
     not fast (relies on userland proxying or iptables).
 
 
-
 YAML File Explained
 
   Each YAML configuration file has 4 requirements
@@ -987,8 +1009,6 @@ YAML File Explained
 
   4) spec (specification)
       Is a dictionary
-
-
 
 
   TO create YAML template files for pods, deployments, services, replicatSets
@@ -1088,92 +1108,6 @@ Ways to create resources
 
 
 
-#######################################
-# ETCD BACKUP BEGIN
-#######################################
-List Cluster Members:
-
-sudo ETCDCTL_API=3 etcdctl --endpoints 192.168.50.10:2379   --cert=/etc/kubernetes/pki/etcd/server.crt   --key=/etc/kubernetes/pki/etcd/server.key   --cacert=/etc/kubernetes/pki/etcd/ca.crt   member list
-
-
-Get Cluster Name:
-
-ETCDCTL_API=3 etcdctl get cluster.name --endpoints=https://10.0.1.101:2379 \
---cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
---cert=/home/cloud_user/etcd-certs/etcd-server.crt \
---key=/home/cloud_user/etcd-certs/etcd-server.key cluster.name beebox
-
-
-Backup ETCD Data:
-
-ETCDCTL_API=3 etcdctl snapshot save /home/cloud_user/etcd_backup.db  \
---endpoints=https://10.0.1.101:2379 \
---cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
---cert=/home/cloud_user/etcd-certs/etcd-server.crt \
---key=/home/cloud_user/etcd-certs/etcd-server.key
-
-
-Verify ETCD Snapshot:
-
-ETCDCTL_API=3 etcdctl --write-out=table snapshot status
-/path/to/backup/file/etcd_backup.db
-
-+----------+----------+------------+------------+
-|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
-+----------+----------+------------+------------+
-| f5a1f70b |   833063 |       1523 |     4.5 MB |
-+----------+----------+------------+------------+
-
-#######################################
-# ETCD BACKUP END
-#######################################
-
-
-##########################################
-Restore ETCD BEGIN
-##########################################
-
-
-Stop etcd service
-systemctl stop etcd.service
-
-
-Remove etcd data
-
-sudo rm -rf /var/lib/etcd/
-
-
-Restore etcd data
-
-sudo ETCDCTL_API=3 etcdctl snapshot restore /home/cloud_user/etcd_backup.db \
-> --initial-cluster etcd-restore=https://10.0.1.101:2380 \
-> --initial-advertise-peer-urls https://10.0.1.101:2380 \
-> --name etcd-restore \
-> --data-dir /var/lib/etcd
-
-
-Correct Ownership on /var/lib/etcd
-
-sudo chown -R etcd:etcd /var/lib/etcd
-
-
-Start etcd service
-
-sudo systemctl start etcd.service
-
-Verify cluster name
-
-ETCDCTL_API=3 etcdctl get cluster.name --endpoints=https://10.0.1.101:2379 \
---cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
---cert=/home/cloud_user/etcd-certs/etcd-server.crt \
---key=/home/cloud_user/etcd-certs/etcd-server.key cluster.name beebox
-
-##########################################
-Restore ETCD END
-##########################################
-
-
-
 Kubernetes Objects are persistent entities. Kubernetes uses these objects to
 represent the state of the cluster.
 Kubernetes objects specifically describe:
@@ -1202,6 +1136,7 @@ metadata: ...
   ...
 spec:
   ...
+
 
 Labels and Selectors
 
@@ -1248,6 +1183,7 @@ Labels and Selectors
     kubectl get pods --selector app=rng
 
 
+Application Lifecycle Management
 
 App Rollout, Rolling Upgrades and Rollbacks
 
@@ -1373,7 +1309,6 @@ Troubleshooting Applications
     There is a better way to look at container logs
 
 
-
 Troubleshooting Kubernetes Networking Issues
 
   kube-proxy and DNS
@@ -1396,7 +1331,6 @@ Troubleshooting Kubernetes Networking Issues
     of networking exploration and Troubleshooting tools.
 
     db-service.dev.svc.cluster.local --> service_name.namespace.service.domain
-
 
 
 YAML BASICS
@@ -1477,12 +1411,47 @@ Rolling Updates
 
 Imperative vs Declaritive
 
-  Imperative: Step by step instructions
+  Imperative: Step by step instructions. In the case of K8S the kubectl command.
+
+    Create K8S Objects:
+      Create a pod:
+      kubectl run --image=nginx nginx-pod
+
+      Create a deployment:
+      kubectl create deployment --image=nginx nginx-deployment
+
+      Create a service for the nginx-deployment:
+      kubectl expose deployment nginx-deployment --port=80 --targetPort=80 --type NodePort
+
+      kubectl create -f nginx.yaml
+
+    Updating K8S Objects:
+      Manually editing a live deployment:
+      kubectl edit deployment nginx-deployment
+
+      Scale up number of pods for nginx-deployment:
+      kubectl scale deployment nginx-deployment --replicas=4
+
+      Rollout upgrade to pod image for the nginx-deployment:
+      kubectl set image deployment nginx-deployment nginx=nginx:1.18
+
+      kubectl replace -f nginx.yaml
+      kubectl replace --force -f nginx.yaml
+
+    kubectl delete -f nginx.yaml
+
+
   Declaritive: End state.
+    Running the kubectl apply to create/update/delete a K8S object.
+
+    Create K8S Objects:
+      kubectl apply -f nginx.yaml
+
+    Update K8S Objects:
+      kubectl apply -f nginx.yaml
+
 
 Application Commands and Arguments In Pod Definition Files
-
-
 
 
 
@@ -1616,3 +1585,185 @@ To get top level list of all keys in a cluster:
 
 To get values of keys:
   myetcdctl get / --prefix
+
+
+  #######################################
+# ETCD BACKUP BEGIN
+#######################################
+List Cluster Members:
+
+sudo ETCDCTL_API=3 etcdctl --endpoints 192.168.50.10:2379   --cert=/etc/kubernetes/pki/etcd/server.crt   --key=/etc/kubernetes/pki/etcd/server.key   --cacert=/etc/kubernetes/pki/etcd/ca.crt   member list
+
+
+Get Cluster Name:
+
+ETCDCTL_API=3 etcdctl get cluster.name --endpoints=https://10.0.1.101:2379 \
+--cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+--cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+--key=/home/cloud_user/etcd-certs/etcd-server.key cluster.name beebox
+
+
+Backup ETCD Data:
+
+ETCDCTL_API=3 etcdctl snapshot save /home/cloud_user/etcd_backup.db  \
+--endpoints=https://10.0.1.101:2379 \
+--cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+--cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+--key=/home/cloud_user/etcd-certs/etcd-server.key
+
+
+Verify ETCD Snapshot:
+
+ETCDCTL_API=3 etcdctl --write-out=table snapshot status
+/path/to/backup/file/etcd_backup.db
+
++----------+----------+------------+------------+
+|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
++----------+----------+------------+------------+
+| f5a1f70b |   833063 |       1523 |     4.5 MB |
++----------+----------+------------+------------+
+
+#######################################
+# ETCD BACKUP END
+#######################################
+
+
+##########################################
+Restore ETCD BEGIN
+##########################################
+
+
+Stop etcd service
+systemctl stop etcd.service
+
+
+Remove etcd data
+
+sudo rm -rf /var/lib/etcd/
+
+
+Restore etcd data
+
+sudo ETCDCTL_API=3 etcdctl snapshot restore /home/cloud_user/etcd_backup.db \
+> --initial-cluster etcd-restore=https://10.0.1.101:2380 \
+> --initial-advertise-peer-urls https://10.0.1.101:2380 \
+> --name etcd-restore \
+> --data-dir /var/lib/etcd
+
+
+Correct Ownership on /var/lib/etcd
+
+sudo chown -R etcd:etcd /var/lib/etcd
+
+
+Start etcd service
+
+sudo systemctl start etcd.service
+
+Verify cluster name
+
+ETCDCTL_API=3 etcdctl get cluster.name --endpoints=https://10.0.1.101:2379 \
+--cacert=/home/cloud_user/etcd-certs/etcd-ca.pem \
+--cert=/home/cloud_user/etcd-certs/etcd-server.crt \
+--key=/home/cloud_user/etcd-certs/etcd-server.key cluster.name beebox
+
+##########################################
+Restore ETCD END
+##########################################
+
+
+
+
+Certification Tips - Imperative Commands with Kubectl
+
+While you would be working mostly the declarative way - using definition files,
+imperative commands can help in getting one time tasks done quickly, as well as
+generate a definition template easily. This would help save considerable amount
+of time during your exams.
+
+Before we begin, familiarize with the two options that can come in handy while
+working with the below commands:
+
+--dry-run: By default as soon as the command is run, the resource will be created.
+If you simply want to test your command , use the --dry-run=client option. This
+will not create the resource, instead, tell you whether the resource can be created
+and if your command is right.
+
+-o yaml: This will output the resource definition in YAML format on screen.
+
+Use the above two in combination to generate a resource definition file quickly,
+that you can then modify and create resources as required, instead of creating
+the files from scratch.
+
+POD
+Create an NGINX Pod
+
+kubectl run nginx --image=nginx
+
+Generate POD Manifest YAML file (-o yaml). Don't create it(--dry-run)
+
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+
+
+Deployment
+Create a deployment
+
+kubectl create deployment --image=nginx nginx
+
+Generate Deployment YAML file (-o yaml). Don't create it(--dry-run)
+
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+
+
+Generate Deployment with 4 Replicas
+
+kubectl create deployment nginx --image=nginx --replicas=4
+
+
+You can also scale a deployment using the kubectl scale command.
+
+kubectl scale deployment nginx --replicas=4
+
+Another way to do this is to save the YAML definition to a file and modify
+
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
+
+You can then update the YAML file with the replicas or any other field before creating the deployment.
+
+
+Service
+Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
+
+kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
+
+(This will automatically use the pod's labels as selectors)
+
+Or
+
+kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml
+(This will not use the pods labels as selectors, instead it will assume selectors as
+app=redis. You cannot pass in selectors as an option. So it does not work very well if
+your pod has a different label set. So generate the file and modify the selectors
+before creating the service)
+
+
+
+Create a Service named nginx of type NodePort to expose pod nginx's port 80 on port
+30080 on the nodes:
+
+kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml
+
+(This will automatically use the pod's labels as selectors, but you cannot specify the node port.
+You have to generate a definition file and then add the node port in manually before creating the
+service with the pod.)
+
+Or
+
+kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+
+(This will not use the pods labels as selectors)
+
+Both the above commands have their own challenges. While one of it cannot accept a selector the
+other cannot accept a node port. I would recommend going with the kubectl expose command. If you
+need to specify a node port, generate a definition file using the same command and manually input
+the nodeport before creating the service.

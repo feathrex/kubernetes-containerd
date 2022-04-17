@@ -4,10 +4,12 @@ metadata:
   name: myapp-service
 spec:
   type: NodePort
+  # This object is an ARRAY and you can have multiple elements in the array
   ports:
     - targetPort: 80 # Port on the POD
       port: 80 # Port on the SERVICE
       nodePort: 30008 # Port on the NODE
+  # The selector connects the SERVICE to the PODS running the application
   selector:
-    app: myapp
-    type: front-end
+    app: myapp # Must match labels in pod definition spec
+    type: front-end # Must match labels in pod definition spec

@@ -320,7 +320,8 @@
 
   - name: Install calico pod network
     become: false
-    shell: kubectl create -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
+    shell: kubectl create -f https://docs.projectcalico.org/v3.22/manifests/calico.yaml
+    #shell: kubectl create -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
     when: ansible_facts['hostname'] == "controller-01"
 
   - name: Install Kubernetes Dashboard

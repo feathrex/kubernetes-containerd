@@ -1,15 +1,12 @@
-apiVersion: v1 # <-- string
-kind: Pod # <-- string type of object to create
+---
+apiVersion: v1
+kind: Pod
 metadata:
-  name: myapp-pod # <-- string
-  labels: # <-- dictionary
-    app: myapp
+  name: nginx-pod
+  labels:
+    app: webapp
     type: front-end
-    silly-name: my-dumb-pod
 spec:
-  containers: # <-- List/array
-    - name: nginx # <-- first item in the list
-      image: nginx:1.19.2
-      ports:
-        - containerPort: 80
-  restartPolicy: OnFailure
+  containers:
+  - name: nginx-container
+    image: nginx:1.18

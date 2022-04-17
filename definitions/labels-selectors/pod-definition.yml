@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp
+  labels:
+    app: App1
+    function: Front-end
+
+spec:
+  containers:
+    - name: simple-webapp-container
+      image: feathrex/simpleweb:v2
+      ports:
+      - containerPort: 8080
+  resources:

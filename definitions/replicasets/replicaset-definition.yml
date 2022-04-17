@@ -10,7 +10,7 @@ spec:
     metadata:
       name: myapp-pod
       labels:
-        app: myapp-rc
+        app: myapp-rcccc
         type: front-end
     spec:
       containers:
@@ -20,5 +20,5 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: myapp-rc
+      app: myapp-rcccc
       type: front-end
