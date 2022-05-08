@@ -45,6 +45,9 @@ Vagrant.configure("2") do |config|
 
     (1..N).each do |i|
         config.vm.define "worker-0#{i}" do |worker|
+        #if Vagrant.has_plugin?("vagrant-vbguest")
+        config.vbguest.auto_update = false
+        #end
             worker.vm.box = IMAGE_NAME
             worker.vm.network "private_network", ip: "192.168.60.1#{i + 33}"
             worker.vm.hostname = "worker-0#{i}"
@@ -59,3 +62,5 @@ Vagrant.configure("2") do |config|
         end
     end
 end
+
+

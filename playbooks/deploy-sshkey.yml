@@ -22,7 +22,7 @@
   gather_facts: false
 
   vars_files:
-    - /vagrant/vars/ssh_vars.yml
+    - /vagrant/playbooks/vars/ssh_vars.yml
 
   tasks:
   - name: Make sure /home/vagrant/.ssh directory exists

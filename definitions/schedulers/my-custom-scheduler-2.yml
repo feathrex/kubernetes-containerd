@@ -4,15 +4,15 @@ metadata:
   labels:
     component: scheduler
     tier: control-plane
-  name: my-scheduler2
+  name: my-scheduler
   namespace: kube-system
 spec:
   containers:
     - command:
         - /usr/local/bin/kube-scheduler
-        - --address=0.0.0.0
+        - --address=127.0.0.1
         - --leader-elect=false
-        - --scheduler-name=my-scheduler2
-      image: k8s.gcr.io/kube-scheduler-amd64:v1.21.4
-      name: my-scheduler2-pod
+        - --scheduler-name=my-scheduler
+      image: k8s.gcr.io/kube-scheduler:v1.21.12
+      name: my-scheduler
   resources:

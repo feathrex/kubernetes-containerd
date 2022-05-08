@@ -47,9 +47,14 @@ Docker
       Mount
       Network
       IPC
+      UTC (Unix Time Sharing)
 
     cgroups
       Ability to limit resources CPU, memory, network, etc..
+      Resource limits on system resources CPU, memory, network, etc..
+      Prioritization
+      Accounting
+      Control
 
     copy-on-write storage
 
@@ -195,26 +200,84 @@ Kubernetes
       Taints and Tolerations
 
         Sets restrictions on which pods can be scheduled to run on a node.
+        Tells node to only accept pods with a certain toleration
         Taints are set on nodes in a cluster.
         Tolerations are set on pods.
 
         By default no pod has any set tolerations.
 
-      To remove the taint from the master/controlplane node:
-      kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-
+        To remove the taint from the master/controlplane node:
+        kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-
 
 
       Node selectors/Affinity
 
+        Selectors:
         To restrict a pod to run on a particular node.
+        Can't use advaced expressions like OR or NOT:
+          example: Large OR Medium?
+                  NOT Small
+
+        To ensure pods are hosted on particular nodes.
+
+        Affinity:
+        Can use operators like: In, NotIn, Exists, DoesNotExist, Gt, Lt
 
 
       Resource Requirements
+
+        Default resource limits for the entire cluster can be set in the LimitRange
+        namespace. Specifically mem-limit-range and cpu-limit-range
+
+        CPU:
+          Minimum value is 1m or 0.1 == 100m (milli)
+          1 CPU is one vCPU
+          Default for K8S is 1 vCPU per container
+          A pod can NOT use more CPU resources than it's limit.
+
+        Memory:
+          256Mi
+          A pod CAN use more memory resources than it's limit.
+
+        1G (Gigabyte) = 1,000,000,000 bytes
+        1M (Megabyte) = 1,000,000 bytes
+        1K (Kilobite) = 1,000 bytes
+
+        1Gi (Gibibyte) = 1,073,741,824 bytes  2^30
+        1Mi (Mebibytes) = 1,048,576 bytes or 2^20
+        1Ki (kibibytes) = 1,024 bytes 2^10
+
+        spec:
+          containers:
+          - name: simple-web
+            image: simple-web
+            ports:
+              - containerPort: 8080
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: 4
+              limits:
+                memory: "2Gi"
+                cpu: 8
 
 
       Manual Scheduling
         Must set nodeName to a value in the YAML definition file at creation time,
         Or the pod will be in a PENDING state.
+
+
+      Multiple Schedulers
+
+      IMPORTANT when creating a custom scheduler the option --leader-elect MUST be
+      set to false.
+      IMPORTANT also set a custom name for the scheduler with --scheduler-name=custom-scheduler
+
+      When creating a custom scheduler in a multi-master setup the --lock-object-name must
+      also be set.
+
+      For a pod to use the custom scheduler in the pod definition file you need to set
+      schedulerName to the name of the custom scheduler under containers dictionary.
 
 
     kube-controller-manager
@@ -528,6 +591,19 @@ Kubernetes Components
       For kubeadmin installs the staticPodPath will be /etc/kubernetes/mainfests.
       Check /var/lib/kubelet/config.yaml for staticPodPath
 
+      Why use static pods?
+        When using the kubeadm tool it uses static pods to build out the control
+        plane components.
+
+      Static Pods vs DaemonSets
+
+      Static Pods                                       DaemonSets
+      Created by kubelet                                Created by kube-apiserver (DaemonSet controller)
+      Deploy control plane components as static pods.   Deploy monitoring agents, logging agents on nodes
+                                      Ignored by the kube-scheduler
+
+
+
 Kubernetes Kind List:
 
   Kind                                                Version
@@ -808,8 +884,8 @@ Kubernetes Kind List:
     How it now works:
       Uses NodeAfinity and the default scheduler.
 
-
     For example kube-proxy is deployed via daemonset.
+
 
   Deployment
     A kubernetes object that defines a desired state for a ReplicaSet (a set of
@@ -952,6 +1028,25 @@ Kubernetes Kind List:
       Restart policies are an important component of self-healing applications,
       which are automatically repaired when a problem arises.
 
+
+Kubernetes Cluster Monitoring
+
+  Open Source Monitoring solutions:
+    Metrics Server (formaly known as Heapster)
+    Prometheus
+    ELK
+    ... others
+
+  Propritary Monitoring Solutions
+    Datadog
+    dynaTrace
+    ... others
+
+  Kubelet runs on each worker node and kubelet contains a sub-component called cAdvisor
+  that is responsible for retrieving performance metrics from pods and exposing them
+  through kubelet API to make the metrics available.
+
+
 Networking Model
   One big flat IP network
   All nodes must be able to reach each other w/o NAT
@@ -1044,26 +1139,6 @@ Service configuration file:
   - selector: to connect to the Pod through label
 
 
-#####
-# Changes to kubectl run
-#####
-
-Before 1.18 use
-kubectl run nginx --image nginx   created a Deployment named nginx (which creates
-the ReplicaSet, which creates a Pod)
-
-1.18+ use
-kubectl run nginx --image nginx           creates a Pod named nginx
-kubectl create deployment nginx --image   creates a Deployment named nginx
-
-WARNING: One limit in 1.18 is there is no way to kubectl create deployment and also
-run a custom command in an image.
-You can create pods with custom commands using the new kubectl run, but if you want
-to override the Dockerfile CMD in a deployment, you'll need to use a YAML manifest
-to do it. This may affect a few examples in this course until all videos are
-replaced with "1.18 compatible examples".
-
-
 Ways to create resources
 
   kubectl run
@@ -1107,7 +1182,6 @@ Ways to create resources
       ...
 
 
-
 Kubernetes Objects are persistent entities. Kubernetes uses these objects to
 represent the state of the cluster.
 Kubernetes objects specifically describe:
@@ -1115,7 +1189,6 @@ Kubernetes objects specifically describe:
   The resources availabile to those applications
   The policies around how those applications behave, such as restart policies,
   upgrades and fault-tolerance
-
 
 
 A kubernetes mainfest must have the following 4 attributes for each resource
@@ -1174,8 +1247,6 @@ Labels and Selectors
     Are the "glue" that connect resources together.
     A selector is how a service finds pods it's to send connections to.
 
-
-
   To get a list of pods for a specific LABEL use:
     kubectl get pods -l app=rng
 
@@ -1211,7 +1282,7 @@ Recreate
   Scales down the deployment to zero, then scales up the deployment using the new
   application image.
 
-RollingUpdate
+RollingUpdate (The Default Deployment Strategy)
   Scales the deployment up and down accordingly while deploying the new application
   image.
 

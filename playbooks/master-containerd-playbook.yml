@@ -299,6 +299,12 @@
       line: set tabstop=2 shiftwidth=2 softtabstop=2 smarttab expandtab
       create: yes
 
+  - name: Add vagrant user to root group
+    user:
+      name: vagrant
+      groups: root
+      append: true
+
   - name: Create /home/vagrant/.ssh/config with strict host checking
     lineinfile:
       path: /home/vagrant/.ssh/config

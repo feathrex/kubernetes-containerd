@@ -223,6 +223,12 @@
       line: export EDITOR=vim
       insertbefore: 'set -o vi'
 
+  - name: Add vagrant user to root group
+    user:
+      name: vagrant
+      groups: root
+      append: true
+
   - name: Restart kubelet
     service:
       name: kubelet

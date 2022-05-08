@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypoddy
+  labels:
+    app: myappy
+spec:
+  containers:
+  - name: my-container
+    image: httpd
+    resources: {}

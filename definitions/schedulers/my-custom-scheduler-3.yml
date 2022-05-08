@@ -19,7 +19,7 @@ spec:
     - --port=10282
     - --scheduler-name=my-scheduler
     - --secure-port=0
-    image: k8s.gcr.io/kube-scheduler:v1.19.0
+    image: k8s.gcr.io/kube-scheduler:v1.21.12
     imagePullPolicy: IfNotPresent
     livenessProbe:
       failureThreshold: 8
