@@ -1,0 +1,16 @@
+---
+- hosts: controller-01
+  gather_facts: false
+  become: false
+
+  tasks:
+  - name: Adding calicoctl Environment Variables To .bashrc
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      line: '{{ item }}'
+      insertbefore: 'set -o vi'
+    with_items:
+      - 'DATASTORE_TYPE=kubernetes'
+      - 'KUBECONFIG=~/.kube/config'
+      - 'KUBERNETES_MASTER=https://10.0.1.131:6443'

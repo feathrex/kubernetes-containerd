@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
         - name: simpleweb-container
-          image: feathrex/simpleweb:v1
+          image: feathrex/simpleweb:red
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
       resources:

@@ -1,0 +1,5 @@
+---
+sshkey: /home/vagrant/.ssh/id_ed25519.pub
+sshkey_filename: id_ed25519
+ssh_dir_path: /home/vagrant/.ssh
+...

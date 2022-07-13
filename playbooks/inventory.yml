@@ -10,9 +10,9 @@ all:
         controller-01:
           # ONLY NEEDED IF DNS/HOSTS ENTRY NOT PRESENT
           #ansible_host: 10.0.1.131
-        controller-02:
+        #controller-02:
           #ansible_host: 10.0.1.132
-        controller-03:
+        #controller-03:
           #ansible_host: 10.0.1.133
         worker-01:
           #ansible_host: 10.0.1.134
@@ -22,5 +22,5 @@ all:
           #ansible_host: 10.0.1.136
         worker-04:
           #ansible_host: 10.0.1.137
-        kubelb-01:
+        #kubelb-01:
           #ansible_host: 10.0.1.130

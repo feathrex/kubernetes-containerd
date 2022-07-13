@@ -28,6 +28,7 @@
   - name: Adding apt repository for Kubernetes
     apt_repository:
       repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      #repo: deb https://apt.kubernetes.io/ kubernetes-jammy main
       state: present
       filename: kubernetes
 
@@ -46,15 +47,14 @@
       - net-tools
       - vim
       - ansible
-      - ansible-doc
       - ansible-lint
+      - ansible-doc # For Focal64
       - yamllint
       - sshpass
       - chrony
       - etcd-client
       - jq
       - traceroute
-      - bridge-utils
       - httping
       - sysstat
       - tree
@@ -170,28 +170,28 @@
     command: swapoff -a
     when: ansible_swaptotal_mb > 0
 
-# - name: Add /etc/host entries
-#   lineinfile:
-#     path: /etc/hosts
-#     line: "{{ item }}"
-#     state: present
-#   with_items:
-#     - '10.0.1.131 controller-01 kube-master'
-#     - '10.0.1.132 controller-02'
-#     - '10.0.1.133 controller-03'
-#     - '10.0.1.134 worker-01'
-#     - '10.0.1.135 worker-02'
-#     - '10.0.1.136 worker-03'
-#     - '10.0.1.137 worker-04'
-#     - '10.0.1.130 kubelb-01'
-#     - '192.168.60.131 controller-01-priv'
-#     - '192.168.60.132 controller-02-priv'
-#     - '192.168.60.133 controller-03-priv'
-#     - '192.168.60.134 worker-01-priv'
-#     - '192.168.60.135 worker-02-priv'
-#     - '192.168.60.136 worker-03-priv'
-#     - '192.168.60.137 worker-04-priv'
-#     - '192.168.60.130 kubelb-01-priv'
+  - name: Add /etc/host entries
+    lineinfile:
+     path: /etc/hosts
+     line: "{{ item }}"
+     state: present
+    with_items:
+     - '10.0.1.131 controller-01 kube-master'
+     - '10.0.1.132 controller-02'
+     - '10.0.1.133 controller-03'
+     - '10.0.1.134 worker-01'
+     - '10.0.1.135 worker-02'
+     - '10.0.1.136 worker-03'
+     - '10.0.1.137 worker-04'
+     - '10.0.1.130 kubelb-01'
+     - '192.168.60.131 controller-01-priv'
+     - '192.168.60.132 controller-02-priv'
+     - '192.168.60.133 controller-03-priv'
+     - '192.168.60.134 worker-01-priv'
+     - '192.168.60.135 worker-02-priv'
+     - '192.168.60.136 worker-03-priv'
+     - '192.168.60.137 worker-04-priv'
+     - '192.168.60.130 kubelb-01-priv'
 
 # - name: Mark Docker and Kubernetes Packages Hold
 #   dpkg_selections:
@@ -275,6 +275,17 @@
       regexp: '^set -o vi'
       line: set -o vi
 
+  - name: Adding calicoctl Environment Variables To .bashrc
+    become: false
+    lineinfile:
+      dest: ~/.bashrc
+      line: '{{ item }}'
+      insertbefore: 'set -o vi'
+    with_items:
+      - 'DATASTORE_TYPE=kubernetes'
+      - 'KUBECONFIG=~/.kube/config'
+      - 'KUBERNETES_MASTER=https://10.0.1.131:6443'
+
   - name: Set vim as my default editor
     become: false
     lineinfile:
@@ -326,14 +337,41 @@
 
   - name: Install calico pod network
     become: false
-    shell: kubectl create -f https://docs.projectcalico.org/v3.22/manifests/calico.yaml
+    shell: kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+    #shell: kubectl apply -f /vagrant/playbooks/calico.yaml
+    #shell: kubectl create -f https://docs.projectcalico.org/v3.22/manifests/calico.yaml
     #shell: kubectl create -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
     when: ansible_facts['hostname'] == "controller-01"
 
-  - name: Install Kubernetes Dashboard
+  - name: Create Calico Resources
     become: false
-    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
-    when: ansible_facts['hostname'] == "controller-01"
+    shell: kubectl create -f /vagrant/calico-operators/calico-custom-resources.yml
+
+  - name: Install kubectl-calico kubectl plugin
+    get_url:
+      #url: https://github.com/projectcalico/calico/releases/download/v3.23.2/calicoctl-linux-amd64
+      url: https://github.com/projectcalico/calico/releases/download/v3.23.2/calicoctl-linux-amd64
+      dest: /usr/local/bin/kubectl-calico
+      owner: root
+      group: root
+      mode: '0755'
+
+    #- name: Add Cilium Helm Repository
+    #become: false
+    #shell: helm repo add cilium https://helm.cilium.io/
+
+    #- name: Install Cilium Network Overlay
+    #become: false
+    #shell: helm install cilium cilium/cilium --version 1.11.6 --namespace kube-system
+
+    #- name: Install Cilium
+    #become: false
+    #shell: kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml
+
+    #- name: Install Kubernetes Dashboard
+    #become: false
+    #shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+    #when: ansible_facts['hostname'] == "controller-01"
 
   - name: Create kubectl/bash completion
     shell: kubectl completion bash > /tmp/kubectl

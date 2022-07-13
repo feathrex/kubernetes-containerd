@@ -60,8 +60,15 @@ Docker
 
   Docker Images
 
+    A read-only template with instructions on how to create a container.
+
+  Container
+
+    A runnable instance of a docker image.
+
 
   Dockerfile
+
     Describes the build process for an image.
 
     Can be run to automatically create an image.
@@ -357,6 +364,12 @@ Kubernetes
 
     Network overlay (calico, etc.)
 
+      Default encapsulation is IP-in-IP.
+      Uses BGP (Border Gateway Protocol) to share and exchange routing information b/w
+      nodes to facilitate POD network communcation.
+
+
+
 
     coredns (DNS)
 
@@ -379,6 +392,7 @@ Kubernetes
       Note: this only shows containers you won't see host services
       Also Note: you may see different namespaces depending on setup
 
+
   CNI (Container Network Interface)
     Most Kubernetes clusters use CNI "plugins" to implement networking
     When a pod is created, Kubernetes delegates the network setup to these plugins
@@ -391,7 +405,7 @@ Kubernetes
 
     The "pod-to-pod network" or "pod network":
       provides communication b/w pods and nodes
-      is generally implemented with CNI plugins
+      is generally implemented with CNI plugins like Cilium, Flannel and Calico
 
     The "pod-to-service-network":
       provides internal communication and load balancing
@@ -411,6 +425,10 @@ Kubernetes
     Some solutions can fill multiple roles
       e.g. kube-router can be setup to provide the pod network and/or network
       policies and/or replace kube-proxy
+
+  CSI (Container Storage Interface)
+
+  CRI (Container Runtime Interface)
 
 Kubernetes Components
 
@@ -493,6 +511,12 @@ Kubernetes Components
         https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/
 
 
+  Multi-container Pods
+
+    Example pairing together a web server and log agent.
+    These apps will share the same network space and application life cycle.
+
+
   Namespace:
     A feature/module of the Linux kernel that allow you to provide a "view" to
     the process that hides everything outside of the namespace, thus giving its
@@ -505,6 +529,7 @@ Kubernetes Components
       File System
       Network Interfaces
       Inter-Process Communication (IPC)
+      UTS (UNIX Time Share)
 
       Simple way to create a process namespace:
         sudo unshare --fork --pid --mount-proc bash
@@ -622,6 +647,8 @@ Kubernetes Kind List:
 
 
   Services
+
+    Service cidr range (default) is 10.96.0.0/12
 
     kind: Service
     What is a service?
@@ -752,6 +779,18 @@ Kubernetes Kind List:
       cluster. Traffic routing is controlled by rules defined on the ingress
       resource. L7 HTTP routing
 
+      HTTP proxy/routing rules
+
+      L7 layer routing.
+
+      API to match hostnames and URL paths
+
+      Targets a service for each rule.
+
+      Kubernetes defines the API but implementations are 3rd party
+
+      Integrates with cloud providers (AWS, GCP, Azure) load balancers
+
 
     Ingress Controller
       evaluates all the rules defined in your cluster
@@ -779,6 +818,13 @@ Kubernetes Kind List:
     certs, etc..
     base64 encoding
 
+    To encode a secret:
+
+      echo -n "mysql" | base64
+      bXlzcWw=
+
+      Place resulting encoded data into the secrets definition yaml file.
+
 
   Volumes
     Physical storage attached/mounted to pods.
@@ -801,11 +847,19 @@ Kubernetes Kind List:
 
       hostPath: Stores data in a specified directory on the kubernetes node.
 
-      emptyDir: A NON persistent volume that stores data in a dynamically created
-      location on the node. The directory exists only as long as the Pod exists on
-      the node. The directory and the data are deleted when the Pod is removed.
-      This volume type is very useful for simply sharing data between containers in
-      the SAME Pod.
+      emptyDir: A NON persistent ephemeral volume that stores data in a dynamically
+      created location on the node. The directory exists only as long as the Pod
+      exists on the node. The directory and the data are deleted when the Pod is
+      removed. This volume type is very useful for simply sharing data between
+      containers in the SAME Pod.
+
+      Generic ephemeral volumes
+
+      CSI ephemeral volumes
+
+      configMaps
+
+      secrets
 
 
   Persistent Volumes
@@ -837,6 +891,20 @@ Kubernetes Kind List:
 
       Recycle: automatically deletes all the data in the underlying storage
       resource, allowing the PersistentVolume to be reused.
+
+    Persistent storage falls under three different categories
+
+      Network
+        NFS
+
+      Block
+        fiber channel
+        iSCSI
+
+      Cloud
+        AWS EBS
+        Azure Disk
+        GCE Persistent Disk
 
 
   StatefulSet
@@ -1256,35 +1324,88 @@ Labels and Selectors
 
 Application Lifecycle Management
 
-App Rollout, Rolling Upgrades and Rollbacks
+  App Rollout, Rolling Upgrades and Rollbacks
 
-Deploy app:
-  kubectl apply -f deployment/my-deployment.yml
+  Deploy/Create app Deployment:
+    kubectl apply -f deployment/my-deployment.yml
 
-Get status of deployment:
-  kubectl get deployments
+  Get status of deployment:
+    kubectl get deployments
 
-Update NGINX Image in deployment:
-  kubectl set image deployment/my-deployment nginx=nginx:1.21.1 --record
+  Update Deployment Use set image in deployment:
 
-Get status of deployment:
-  kubectl rollout status deployment my-deployment
+    kubectl set image deployment/my-deployment nginx=nginx:1.21.1 --record
 
-Show history of deployment:
-  kubectl rollout history deployment my-deployment
+    or
 
-To Rollback/Undo an application deployment:
-  kubectl rollout undo deployment my-deployment
+  Update deployment definition file with new container image and run:
+
+    kubectl apply -f "name_of_deployment_file"
+
+  Get status of deployment:
+    kubectl rollout status deployment my-deployment
+
+  Show history of deployment:
+    kubectl rollout history deployment my-deployment
+
+  To Rollback/Undo an application deployment:
+    kubectl rollout undo deployment my-deployment
 
 
-Two strategies when doing application updates.
-Recreate
-  Scales down the deployment to zero, then scales up the deployment using the new
-  application image.
+  Two strategies when doing application updates.
+  Recreate
+    Scales down the deployment to zero, then scales up the deployment using the new
+    application image.
 
-RollingUpdate (The Default Deployment Strategy)
-  Scales the deployment up and down accordingly while deploying the new application
-  image.
+  RollingUpdate (The Default Deployment Strategy)
+    Scales the deployment up and down accordingly while deploying the new application
+    image.
+
+
+Working with ConfigMaps or Secrets
+
+  Used to pass configuration data using key value pairs.
+
+  1. Create the configmap
+  2. Inject the configmap into the pod
+
+  There are two ways to create a configmap
+
+    Imperative:
+      kubectl create configmap
+
+      kubectl create configmap "configmap_name" --from-literal=key=value
+
+      example:
+      kubectl create configmap app-config --from-literal=APP_COLOR=blue \
+      --from-literal=APP_MODE=prod
+
+      from a file:
+      kubectl create configmap "configmap_name" --from-file="path_to_file"
+
+      example:
+      kubectl create configmap app-config --from-file=app_config.properties
+
+    Declaritive
+      kubectl apply -f "name_of_config_map"
+
+      Configmap file:
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: app-config
+        data:
+          APP_COLOR: blue
+          APP_MODE: prod
+
+  To view configmaps
+
+    kubectl get configmaps
+
+    kubectl describe configmaps
+
+
+
 
 
 Troubleshooting Kubernetes
@@ -1340,6 +1461,21 @@ Cluster and Node Logs
     Note that these log files may not appear for kubeadm clusters, since some/all
     components run inside containers. In that case you can access them with kubectl
     logs.
+
+
+Network Troubleshooting of Kubernetes
+
+  To troubleshoot or sniff network traffic between two PODs do the following.
+    1. Get the IP addresses of the pods using:
+        kubectl get pods -o wide
+
+    2. SSH to worker node(s) hosting the pods.
+
+    3. Using tshark or tcpdump gather network packets between both pods.
+       Need to produce network traffic using curl or other utility.
+
+    4. tshark command:
+       root@worker-01:~# tshark -i cali1e0ad1c2d44 -Y "ip.src == 10.240.182.194 && ip.dst == 10.240.171.3"
 
 
 Troubleshooting Applications
@@ -1522,7 +1658,42 @@ Imperative vs Declaritive
       kubectl apply -f nginx.yaml
 
 
-Application Commands and Arguments In Pod Definition Files
+Application Commands and Arguments In Dockerfile Definition Files
+
+  Dockerfile CMD entry Examples
+
+  Shell format
+  CMD command param1          CMD sleep 5
+
+  JSON Format
+  CMD ["command", "param1"]   CMD ["sleep", "5"]
+
+  If you wish to override the default entry in a Dockerfile CMD field append
+  the command to the end of the docker container run command.
+
+    docker container run ubuntu-sleeper sleep 10
+
+  The above command isn't pretty we want something like this.
+
+    docker container run ubuntu-sleeper 10
+
+  So, you need to update the Dockerfile and an entry called ENTRYPOINT and
+  rebuild the image.
+
+  To set a default value for the command if one wasn't specified.
+
+  To override the ENTRYPOINT you can use the --entrypoint option when executing docker run
+
+    docker container run --entrypoint sleep2.0 ubuntu-sleeper 10
+
+
+Application Commands and Arguments In Pod Definition File
+
+  The ENTRYPOINT field corresponds to the command field in a pod definition file
+  The CMD field corresponds to the args field in a pod definition file
+
+
+Environment Variables
 
 
 
@@ -1606,6 +1777,9 @@ Create Service Step by Step:
 
   List taints by node:
     kubectl get nodes -o json | jq ".items[]|{name:.metadata.name, taints:.spec.taints}"
+
+  Remove all taints from master node:
+    kubectl taint nodes --all node-role.kubernetes.io/master-
 
   List Rolling Update Percentage:
     kubectl get deployments.apps -o json | jq ".items[] | {name:.metadata.name} + .spec.strategy.rollingUpdate"

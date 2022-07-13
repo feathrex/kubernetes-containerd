@@ -2,6 +2,8 @@
 # vi: set ft=ruby :
 
 IMAGE_NAME = "ubuntu/focal64"
+#IMAGE_NAME = "ubuntu/jammy64"
+#IMAGE_NAME = "aspyatkin/ubuntu-20.04-server" # Minimal server install
 N = 5
 
 Vagrant.configure("2") do |config|

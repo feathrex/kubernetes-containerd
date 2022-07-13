@@ -1,0 +1,48 @@
+What is Cilium?
+
+  Another K8S CNI provider
+
+  Uses eBPF (extended Berkeley Packet Filter)
+    Using eBPF the need for kube-proxy is no longer necessary
+
+  Networking
+    CNI Provider
+
+  Observability
+    Hubble, provides distributed networking and security.
+
+  Security
+    L3/4, L7 and DNS based network polices
+
+  Service Mesh (Beat)
+    L7 traffic management & load balancing
+    TLS termination
+    etc..
+
+
+  CALICO.. IPTABLES
+
+  For K8S network providesr like Calico that uses IPTABLES there is a heavy overhead when
+  the number of services is scaled up due to the use of IPTABLES and the large numbrer of
+  rules required for a simple service.
+
+  For each service added a multitude of iptables rules must be added.
+
+  IPTABLES are not index, so sequential search is done to find which chains and rules
+  appliled to each packet.
+
+  Incremental changes are not supported (Copy all rules, make changes, then save back all rules)
+
+  It was never designed to be an efficient load balancer in extremely demanding situations.
+
+
+To enable eBPF on existing cluster or new cluster build (update ansible playbooks)
+
+  # Create eBPF configmap
+  kubectl create configmap --namespace=tigera-operator tigera-ebpf-operator --from-file=operators/tigera_ebpf_operator.yml
+
+  # Patch tigera pod
+  kubectl patch installation.operator.tigera.io default --type merge -p '{"spec":{"calicoNetwork":{"linuxDataplane":"BPF", "hostPorts":null}}}'
+
+  # Patch kube-proxy (disable kube-proxy)
+  kubectl patch ds -n kube-system kube-proxy -p '{"spec":{"template":{"spec":{"nodeSelector":{"non-calico": "true"}}}}}'
