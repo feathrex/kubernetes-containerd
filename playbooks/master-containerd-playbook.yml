@@ -58,11 +58,20 @@
       - httping
       - sysstat
       - tree
-      - sysstat
 
   - name: Upgrade the OS (apt-get dist-upgrade)
     apt:
       upgrade: dist
+
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      state: present
 
   - name: Install CRI containerd, Kubernetes and its dependecies
     apt:
@@ -71,10 +80,16 @@
       update_cache: true
     vars:
       packages:
-      - containerd
-      - kubelet=1.21.2-00
-      - kubeadm=1.21.2-00
-      - kubectl=1.21.2-00
+      #- containerd
+      - containerd.io
+      - kubelet=1.23.9-00
+      - kubeadm=1.23.9-00
+      - kubectl=1.23.9-00
+      #- kubelet=1.19.16-00
+      #- kubeadm=1.19.16-00
+      #- kubectl=1.19.16-00
+      notify:
+        - Restart containerd
 
   - name: Load netfilter kernel module
     modprobe:
@@ -139,11 +154,19 @@
     notify:
       - Restart containerd
 
+  - meta: flush_handlers
+
   - name: Enable Chrony
     service:
       name: chrony
       state: started
       enabled: true
+
+  - name: Disable multipathd service
+    service:
+      name: multipathd
+      state: stopped
+      enabled: false
 
   - name: Set timezone to America/Denver
     timezone:
@@ -193,6 +216,12 @@
      - '192.168.60.137 worker-04-priv'
      - '192.168.60.130 kubelb-01-priv'
 
+  - name: Update /etc/hosts
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.2.1 controller-01 controller-01'
+      line: '#127.0.2.1 controller-01 controller-01'
+
 # - name: Mark Docker and Kubernetes Packages Hold
 #   dpkg_selections:
 #     name: "{{ item }}"
@@ -237,13 +266,13 @@
 #            --apiserver-cert-extra-sans="192.168.60.131"  --node-name={{ ansible_hostname }} \
 #            --pod-network-cidr=10.240.0.0/16
 
-# - name: Update /var/lib/kubelet/kubeadm-flags.env
-#   lineinfile:
-#     path: /var/lib/kubelet/kubeadm-flags.env
-#     regexp: '^KUBELET_KUBEADM_ARGS'
-#     line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --container-runtime=remote \
-#           --container-runtime-endpoint=/var/run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
-#   when: ansible_facts['hostname'] == "controller-01"
+  - name: Update /var/lib/kubelet/kubeadm-flags.env
+    lineinfile:
+      path: /var/lib/kubelet/kubeadm-flags.env
+      regexp: '^KUBELET_KUBEADM_ARGS'
+      line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --container-runtime=remote \
+            --container-runtime-endpoint=/var/run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.6"
+    when: ansible_facts['hostname'] == "controller-01"
 
   - name: Generate join command
     command: kubeadm token create --print-join-command
