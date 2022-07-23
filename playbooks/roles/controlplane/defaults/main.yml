@@ -1,0 +1,14 @@
+---
+os_packages_controlplane:
+  - ansible
+  - ansible-doc # For Focal64
+  - ansible-lint
+  - etcd-client
+  - httping
+  - jq
+  - traceroute
+  - yamllint
+  - containerd.io
+  - kubelet=1.24.0-00
+  - kubeadm=1.24.0-00
+  - kubectl=1.24.0-00
