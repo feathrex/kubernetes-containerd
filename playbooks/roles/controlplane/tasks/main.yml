@@ -1,12 +1,10 @@
 ---
 - name: Install Ansible Software Packages For controlplane
   apt:
-    #name: ['{{ controlplane_packages }}', '{{ kubernetes_packages }}']
     name: "{{ controlplane_packages }}"
     state: present
   with_items:
     - "{{ controlplane_packages }}"
-    #- "{{ kubernetes_packages }}"
 
 - name: Install stern
   get_url:
