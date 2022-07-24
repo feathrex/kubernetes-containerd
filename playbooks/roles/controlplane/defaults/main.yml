@@ -1,14 +1,14 @@
----
-controlplane_packages:
-  - ansible
-  - ansible-doc # For Focal64
-  - ansible-lint
-  - etcd-client
-  - httping
-  - jq
-  - traceroute
-  - yamllint
-  - "kubelet={{ k8s_version }}"
-  - "kubeadm={{ k8s_version }}"
-  - "kubectl={{ k8s_version }}"
-  - "containerd.io={{ containerd_version }}"
+#---
+#controlplane_packages:
+#  - ansible
+#  - ansible-doc # For Focal64
+#  - ansible-lint
+#  - etcd-client
+#  - httping
+#  - jq
+#  - traceroute
+#  - yamllint
+#  - "kubelet={{ k8s_version }}"
+#  - "kubeadm={{ k8s_version }}"
+#  - "kubectl={{ k8s_version }}"
+#  - "containerd.io={{ containerd_version }}"
