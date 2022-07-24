@@ -1,1 +1,1 @@
-kubeadm join 10.0.1.131:6443 --token salplf.pdgg9n6hognxp3gn --discovery-token-ca-cert-hash sha256:a8b365495ff1bbab8bce0930c6fbf8a7b6f08419b85df8d0101f78bfb822ab03 
+kubeadm join 10.0.1.131:6443 --token ki4olg.rbbyo9wg2fqvss1w --discovery-token-ca-cert-hash sha256:1806e84ff9c8a73f7a4efaf22524a9e2508eb14019a649eb44fffa2f29398ff5 
