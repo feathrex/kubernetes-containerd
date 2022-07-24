@@ -1,17 +1,4 @@
 ---
-#os_packages_controlplane:
-#  - ansible
-#  - ansible-doc # For Focal64
-#  - ansible-lint
-#  - etcd-client
-#  - httping
-#  - jq
-#  - traceroute
-#  - yamllint
-
-#containerd_package:
-# - "containerd.io={{ containerd_version }}"
-
 controlplane_packages:
   - ansible
   - ansible-doc # For Focal64

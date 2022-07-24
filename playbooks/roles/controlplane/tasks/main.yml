@@ -145,6 +145,13 @@
     regexp: '^127.0.2.1 controller-01 controller-01'
     line: '#127.0.2.1 controller-01 controller-01'
 
+#- name: Add Entries To /etc/hosts
+# blockinfile:
+#   path: /etc/hosts
+#   block: {{lookup('file', 'hosts')}}
+#   create: true
+#   state: present
+
 - name: Configure node ip
   lineinfile:
     path: /etc/default/kubelet
@@ -169,13 +176,13 @@
            --pod-network-cidr=10.240.0.0/16
   when: ansible_facts['hostname'] == "controller-01"
 
-- name: Update /var/lib/kubelet/kubeadm-flags.env
-  lineinfile:
-    path: /var/lib/kubelet/kubeadm-flags.env
-    regexp: '^KUBELET_KUBEADM_ARGS'
-    line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --container-runtime=remote \
-          --container-runtime-endpoint=/var/run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.6"
-  when: ansible_facts['hostname'] == "controller-01"
+#- name: Update /var/lib/kubelet/kubeadm-flags.env
+# lineinfile:
+#   path: /var/lib/kubelet/kubeadm-flags.env
+#   regexp: '^KUBELET_KUBEADM_ARGS'
+#   line: KUBELET_KUBEADM_ARGS="--network-plugin=cni --cgroup-driver=systemd --container-runtime=remote \
+#         --container-runtime-endpoint=/var/run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.6"
+# when: ansible_facts['hostname'] == "controller-01"
 
 - name: Generate join command
   command: kubeadm token create --print-join-command
