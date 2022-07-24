@@ -36,8 +36,8 @@ Vagrant.configure("2") do |config|
         master.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 30}"
         master.vm.hostname = "controller-0#{i}"
         master.vm.provision "ansible" do |ansible|
-            #ansible.playbook = "playbooks/master-v1.24-playbook.yml"
-            ansible.playbook = "playbooks/master-v1.21-playbook.yml"
+            ansible.playbook = "playbooks/master-v1.24-playbook.yml"
+            #ansible.playbook = "playbooks/master-v1.21-playbook.yml"
             ansible.extra_vars = {
               #node_ip: "192.168.60.1#{i + 30}",
               node_ip: "10.0.1.1#{i + 30}",
@@ -56,8 +56,8 @@ Vagrant.configure("2") do |config|
             worker.vm.hostname = "worker-0#{i}"
             worker.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 33}"
             worker.vm.provision "ansible" do |ansible|
-                #ansible.playbook = "playbooks/worker-v1.24-playbook.yml"
-                ansible.playbook = "playbooks/worker-v1.21-playbook.yml"
+                ansible.playbook = "playbooks/worker-v1.24-playbook.yml"
+                #ansible.playbook = "playbooks/worker-v1.21-playbook.yml"
                 ansible.extra_vars = {
                   #node_ip: "192.168.60.1#{i + 33}",
                   node_ip: "10.0.1.1#{i + 33}",

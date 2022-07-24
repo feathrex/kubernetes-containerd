@@ -36,16 +36,12 @@
       state: present
       filename: kubernetes
 
-  - name: Upgrade the OS (apt-get dist-upgrade)
-    apt:
-      upgrade: dist
-
   - name: Add an apt signing key for Docker
     apt_key:
       url: https://download.docker.com/linux/ubuntu/gpg
       state: present
 
-  - name: Add apt repository for stable version
+  - name: Add apt repository for containerd from docker.com
     apt_repository:
       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
       state: present
@@ -54,17 +50,30 @@
   - name: Install Common Software Packages VIA Role
     apt:
       #name: "{{ item }}--{{ mongo_version }}" # When using a variable in role mongo_version: 4.0
-      name: "{{ item }}"
+      #name: "{{ item }}"
+      name: "{{ os_packages_all }}"
       state: present
     with_items: "{{ os_packages_all }}"
 
-  - name: Install Common Software Packages VIA Role
+  - name: Upgrade the OS (apt-get dist-upgrade)
     apt:
-      #name: "{{ item }}--{{ mongo_version }}" # When using a variable in role mongo_version: 4.0
-      name: "{{ item }}"
+      upgrade: dist
+
+#  - name: Install K8S Software Packages VIA Role
+#    apt:
+#      name: "{{ item }}--{{ k8s_version }}" # When using a variable in role mongo_version: 4.0
+#      #name: "{{ item }}"
+#      state: present
+#    with_items: "{{ os_packages_controlplane }}"
+#    when: ansible_facts['hostname'] == "controller-01"
+
+  - name: Install K8S Software Packages VIA Role
+    apt:
+      #name: "{{ item }}"
+      name: "{{ controlplane_packages }}"
       state: present
-    with_items: "{{ os_packages_controlplane }}"
-    when: ansible_facts['hostname'] == "controller-01"
+    with_items: "{{ controlplane_packages }}"
+
 
 #  - name: Install packages that allow apt to be used over HTTPS
 #    apt:

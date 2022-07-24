@@ -1,0 +1,10 @@
+[control]
+ansible-c
+
+[k8stest]
+k8stest[1:2]
+
+
+[linux:children]
+k8stest
+

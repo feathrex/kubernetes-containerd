@@ -11,3 +11,4 @@ os_packages_all:
   - sysstat
   - tree
   - vim
+  - csh

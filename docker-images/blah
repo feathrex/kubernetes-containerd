@@ -1,0 +1,217 @@
+> alsa-topology-conf
+> alsa-ucm-conf
+6a9,10
+> bzip2
+> ca-certificates
+8a13
+> dbus
+11a17,19
+> distro-info-data
+> dmsetup
+> dos2unix
+13a22,23
+> fdisk
+> file
+15c25,28
+< gcc-12-base:amd64
+---
+> gcc-10-base:amd64
+> gir1.2-glib-2.0:amd64
+> git
+> git-man
+20a34,37
+> iproute2
+> iputils-ping
+> krb5-locales
+> less
+21a39
+> libapparmor1:amd64
+22a41,45
+> libargon2-1:amd64
+> libasn1-8-heimdal:amd64
+> libasound2:amd64
+> libasound2-data
+> libatm1:amd64
+26a50,51
+> libbrotli1:amd64
+> libbsd0:amd64
+29a55
+> libcanberra0:amd64
+31a58,59
+> libcap2-bin
+> libcbor0.6:amd64
+33a62,63
+> libcryptsetup12:amd64
+> libcurl3-gnutls:amd64
+34a65
+> libdbus-1-3:amd64
+35a67,71
+> libdevmapper1.02.1:amd64
+> libedit2:amd64
+> libelf1:amd64
+> liberror-perl
+> libexpat1:amd64
+37c73,75
+< libffi8:amd64
+---
+> libfdisk1:amd64
+> libffi7:amd64
+> libfido2-1:amd64
+39a78,82
+> libgdbm-compat4:amd64
+> libgdbm6:amd64
+> libgirepository-1.0-1:amd64
+> libglib2.0-0:amd64
+> libglib2.0-data
+42a86
+> libgpm2:amd64
+44c88,94
+< libhogweed6:amd64
+---
+> libgssapi3-heimdal:amd64
+> libhcrypto4-heimdal:amd64
+> libheimbase1-heimdal:amd64
+> libheimntlm0-heimdal:amd64
+> libhogweed5:amd64
+> libhx509-5-heimdal:amd64
+> libicu66:amd64
+45a96,97
+> libip4tc2:amd64
+> libjson-c4:amd64
+47a100,101
+> libkmod2:amd64
+> libkrb5-26-heimdal:amd64
+49a104,106
+> libldap-2.4-2:amd64
+> libldap-common
+> libltdl7:amd64
+51a109,111
+> libmagic-mgc
+> libmagic1:amd64
+> libmnl0:amd64
+52a113
+> libmpdec2:amd64
+55,56c116,119
+< libnettle8:amd64
+< libnsl2:amd64
+---
+> libnettle7:amd64
+> libnghttp2-14:amd64
+> libnss-systemd:amd64
+> libogg0:amd64
+57a121
+> libpam-cap:amd64
+60a125
+> libpam-systemd:amd64
+63a129
+> libperl5.30:amd64
+64a131,141
+> libpsl5:amd64
+> libpython3-stdlib:amd64
+> libpython3.8:amd64
+> libpython3.8-minimal:amd64
+> libpython3.8-stdlib:amd64
+> libreadline8:amd64
+> libroken18-heimdal:amd64
+> librtmp1:amd64
+> libsasl2-2:amd64
+> libsasl2-modules:amd64
+> libsasl2-modules-db:amd64
+68,69c145,146
+< libsemanage2:amd64
+< libsepol2:amd64
+---
+> libsemanage1:amd64
+> libsepol1:amd64
+70a148
+> libsqlite3-0:amd64
+72c150,151
+< libssl3:amd64
+---
+> libssh-4:amd64
+> libssl1.1:amd64
+75a155
+> libtdb1:amd64
+77,78d156
+< libtirpc-common
+< libtirpc3:amd64
+82c160,172
+< libxxhash0:amd64
+---
+> libvorbis0a:amd64
+> libvorbisfile3:amd64
+> libwind0-heimdal:amd64
+> libwrap0:amd64
+> libx11-6:amd64
+> libx11-data
+> libxau6:amd64
+> libxcb1:amd64
+> libxdmcp6:amd64
+> libxext6:amd64
+> libxml2:amd64
+> libxmuu1:amd64
+> libxtables12:amd64
+83a174
+> locales
+86a178,179
+> lsb-release
+> lsof
+87a181
+> mime-support
+88a183
+> nano
+90a186,193
+> ncurses-term
+> net-tools
+> netbase
+> networkd-dispatcher
+> openssh-client
+> openssh-server
+> openssh-sftp-server
+> openssl
+91a195,196
+> patch
+> perl
+92a198
+> perl-modules-5.30
+93a200,215
+> publicsuffix
+> python3
+> python3-certifi
+> python3-chardet
+> python3-dbus
+> python3-distro
+> python3-gi
+> python3-idna
+> python3-minimal
+> python3-pkg-resources
+> python3-requests
+> python3-six
+> python3-urllib3
+> python3.8
+> python3.8-minimal
+> readline-common
+95a218,224
+> shared-mime-info
+> sound-theme-freedesktop
+> ssh-import-id
+> sudo
+> systemd
+> systemd-sysv
+> systemd-timesyncd
+97a227
+> tzdata
+99c229,230
+< usrmerge
+---
+> ucf
+> unzip
+100a232,239
+> vim
+> vim-common
+> vim-runtime
+> wget
+> xauth
+> xdg-user-dirs
+> xxd
+> xz-utils

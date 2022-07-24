@@ -66,9 +66,9 @@
         # K8S 1.2[12] only works with containerd 1.5.9-1 any version higher and it croaks
         - containerd
         #- containerd.io=1.6.4-1
-        - kubelet=1.23.3-00
-        - kubeadm=1.23.3-00
-        - kubectl=1.23.3-00
+        - kubelet=1.22.3-00
+        - kubeadm=1.22.3-00
+        - kubectl=1.22.3-00
     notify:
       - Restart containerd
 

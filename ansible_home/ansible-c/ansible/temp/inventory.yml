@@ -1,0 +1,24 @@
+---
+# Application servers
+all:
+  vars:
+    ansible_user: ansible
+    #ansible_ssh_private_key_file: ~/.vagrant.d/insecure_private_key
+  children:
+    nodes:
+      hosts:
+        ubuntu-c:
+          # ONLY NEEDED IF DNS/HOSTS ENTRY NOT PRESENT
+          ansible_host: 10.0.1.131
+        ubuntu1:
+          ansible_host: 172.19.0.5
+        ubuntu2:
+          ansible_host: 172.19.0.8
+        ubuntu3:
+          ansible_host: 172.19.0.9
+        centos1:
+          ansible_host: 172.19.0.2
+        centos2:
+          ansible_host: 172.19.0.4
+        centos3:
+          ansible_host: 172.19.0.7
