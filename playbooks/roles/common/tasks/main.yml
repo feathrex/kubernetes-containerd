@@ -1,25 +1,18 @@
 ---
-- name: Add an apt signing key for Kubernetes
+- name: Add apt signing keys for docker and K8S
   apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    url: "{{ item }}"
     state: present
+  with_items:
+    - "{{ apt_keys }}"
 
-- name: Adding apt repository for Kubernetes
+- name: Add Package Repositories
   apt_repository:
-    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    repo: "{{ item.repo }}"
+    filename: "{{ item.filename }}"
     state: present
-    filename: kubernetes
-
-- name: Add an apt signing key for Docker
-  apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
-
-- name: Add apt repository for containerd from docker.com
-  apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
-    state: present
-    filename: docker
+  with_items:
+    - "{{ apt_repos }}"
 
 - name: Install Common Software Packages VIA Role
   apt:
@@ -43,8 +36,7 @@
     name: "{{ item }}"
     state: present
   with_items:
-    - overlay
-    - br_netfilter
+    - "{{ kernel_modules }}"
 
 - name: Update /etc/containerd/config.toml
   shell: containerd config default | sudo tee /etc/containerd/config.toml
@@ -85,12 +77,6 @@
     state: started
     enabled: true
 
-- name: Disable multipathd service
-  service:
-    name: multipathd
-    state: stopped
-    enabled: false
-
 - name: Set timezone to America/Denver
   timezone:
     name: America/Denver
@@ -112,15 +98,15 @@
     - swap
     - none
 
+- name: Disable multipathd service
+  service:
+    name: multipathd
+    state: stopped
+    enabled: false
+
 - name: Disable swap
   command: swapoff -a
   when: ansible_swaptotal_mb > 0
-
-#- name: Update /etc/hosts
-# lineinfile:
-#   path: /etc/hosts
-#   regexp: '^127.0.2.1 controller-01 controller-01'
-#   line: '#127.0.2.1 controller-01 controller-01'
 
 #- name: Add Entries To /etc/hosts
 # blockinfile:
