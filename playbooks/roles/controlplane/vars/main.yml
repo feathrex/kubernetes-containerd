@@ -13,7 +13,7 @@ controlplane_packages:
   - jq
   - traceroute
   - yamllint
-  - "kubelet={{ k8s_version }}"
-  - "kubeadm={{ k8s_version }}"
-  - "kubectl={{ k8s_version }}"
-  - "containerd.io={{ containerd_version }}"
+  #- "kubelet={{ k8s_version }}"
+  #- "kubeadm={{ k8s_version }}"
+  #- "kubectl={{ k8s_version }}"
+  #- "containerd.io={{ containerd_version }}"

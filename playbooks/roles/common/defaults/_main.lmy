@@ -1,0 +1,13 @@
+#---
+#os_packages_all:
+#  - apt-transport-https
+#  - ca-certificates
+#  - chrony
+#  - curl
+#  - gnupg-agent
+#  - net-tools
+#  - software-properties-common
+#  - sshpass
+#  - sysstat
+#  - tree
+#  - vim

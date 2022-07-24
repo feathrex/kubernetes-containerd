@@ -1,4 +1,13 @@
 ---
+- name: Install Ansible Software Packages For controlplane
+  apt:
+    #name: ['{{ controlplane_packages }}', '{{ kubernetes_packages }}']
+    name: "{{ controlplane_packages }}"
+    state: present
+  with_items:
+    - "{{ controlplane_packages }}"
+    #- "{{ kubernetes_packages }}"
+
 - name: Install stern
   get_url:
     url: https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
@@ -77,6 +86,7 @@
 - name: Create Calico Resources
   become: false
   shell: kubectl create -f /vagrant/calico-operators/calico-custom-resources.yml
+  when: ansible_facts['hostname'] == "controller-01"
 
 - name: Install kubectl-calico kubectl plugin
   get_url:
@@ -85,6 +95,7 @@
     owner: root
     group: root
     mode: '0755'
+  when: ansible_facts['hostname'] == "controller-01"
 
 - name: Create kubectl/bash completion
   shell: kubectl completion bash > /tmp/kubectl

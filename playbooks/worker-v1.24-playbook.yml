@@ -4,7 +4,7 @@
 
   roles:
    - common
-   - controlplane
+   - workernodes
 
 #  handlers:
 #  - name: Restart containerd

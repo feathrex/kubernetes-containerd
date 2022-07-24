@@ -31,11 +31,20 @@
   apt:
     upgrade: dist
 
+#- name: Install K8S Software Packages VIA Role
+# apt:
+#   name: "{{ controlplane_packages }}"
+#   state: present
+# with_items: "{{ controlplane_packages }}"
+
 - name: Install K8S Software Packages VIA Role
   apt:
-    name: "{{ controlplane_packages }}"
+    #name: ['{{ controlplane_packages }}', '{{ kubernetes_packages }}']
+    name: "{{ kubernetes_packages }}"
     state: present
-  with_items: "{{ controlplane_packages }}"
+  with_items:
+    #- "{{ controlplane_packages }}"
+    - "{{ kubernetes_packages }}"
 
 - name: Load netfilter kernel module
   modprobe:
