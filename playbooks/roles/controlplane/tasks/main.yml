@@ -97,7 +97,6 @@
   notify:
     - Restart containerd
 
-- meta: flush_handlers
 
 - name: Enable Chrony
   service:
@@ -151,12 +150,18 @@
     path: /etc/default/kubelet
     line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
     create: yes
+  notify:
+    - Restart containerd
+    - Restart kubelet
 
-- name: Restart kubelet
-  service:
-    name: kubelet
-    daemon_reload: true
-    state: restarted
+- name: Flush Handlers
+  meta: flush_handlers
+
+#- name: Restart kubelet
+# service:
+#   name: kubelet
+#   daemon_reload: true
+#   state: restarted
 
 - name: Initialize the Kubernetes cluster using kubeadm
   command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
