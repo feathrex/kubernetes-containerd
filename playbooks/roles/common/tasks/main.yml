@@ -31,19 +31,11 @@
   apt:
     upgrade: dist
 
-#- name: Install K8S Software Packages VIA Role
-# apt:
-#   name: "{{ controlplane_packages }}"
-#   state: present
-# with_items: "{{ controlplane_packages }}"
-
 - name: Install K8S Software Packages VIA Role
   apt:
-    #name: ['{{ controlplane_packages }}', '{{ kubernetes_packages }}']
     name: "{{ kubernetes_packages }}"
     state: present
   with_items:
-    #- "{{ controlplane_packages }}"
     - "{{ kubernetes_packages }}"
 
 - name: Load netfilter kernel module
@@ -53,14 +45,6 @@
   with_items:
     - overlay
     - br_netfilter
-
-- name: Create /etc/containerd
-  file:
-    path: /etc/containerd
-    state: directory
-    mode: '0755'
-    owner: root
-    group: root
 
 - name: Update /etc/containerd/config.toml
   shell: containerd config default | sudo tee /etc/containerd/config.toml
@@ -88,17 +72,12 @@
 
 - name: Set sysctl
   sysctl:
-    name: "{{ item }}"
-    value: '1'
-    sysctl_set: true
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
     state: present
-    reload: yes
+    reload: true
   with_items:
-    - net.ipv4.ip_forward
-    - net.bridge.bridge-nf-call-iptables
-    - net.bridge.bridge-nf-call-ip6tables
-  notify:
-    - Restart containerd
+    - "{{ sysctl_settings }}"
 
 - name: Enable Chrony
   service:
@@ -137,11 +116,11 @@
   command: swapoff -a
   when: ansible_swaptotal_mb > 0
 
-- name: Update /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    regexp: '^127.0.2.1 controller-01 controller-01'
-    line: '#127.0.2.1 controller-01 controller-01'
+#- name: Update /etc/hosts
+# lineinfile:
+#   path: /etc/hosts
+#   regexp: '^127.0.2.1 controller-01 controller-01'
+#   line: '#127.0.2.1 controller-01 controller-01'
 
 #- name: Add Entries To /etc/hosts
 # blockinfile:
