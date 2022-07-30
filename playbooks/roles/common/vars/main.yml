@@ -1,6 +1,6 @@
 ---
 containerd_version: 1.5.10-1
-k8s_version: 1.21.3-00
+k8s_version: 1.22.12-00
 #containerd_version: 1.6.6-1
 #k8s_version: 1.24.3-00
 
@@ -26,6 +26,7 @@ kubernetes_packages:
 
 os_packages_all:
   - apt-transport-https
+  - bridge-utils
   - ca-certificates
   - chrony
   - curl
