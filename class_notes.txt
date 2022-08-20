@@ -66,6 +66,23 @@ Docker
 
     A runnable instance of a docker image.
 
+  Init Container
+
+    Any pod spec can have containers and InitContainers
+
+    Same level as a container.
+
+    Init Containers are run in the order listed (one by one) in the YAML file and before
+    the real workload i.e. containers run.
+
+    Each Init Container MUST complete (exit) successfully, if any Init Container fails
+    the pod fails.
+
+    After all init containers have run successfully normal containers are started
+
+
+
+
 
   Dockerfile
 
