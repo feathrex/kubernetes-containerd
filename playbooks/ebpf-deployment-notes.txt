@@ -1,9 +1,0 @@
-# Create eBPF configmap
-kubectl create configmap --namespace=tigera-operator tigera-ebpf-operator --from-file=tigera_ebpf_operator.yml 
-
-# Patch tigera pod
-kubectl patch installation.operator.tigera.io default --type merge -p '{"spec":{"calicoNetwork":{"linuxDataplane":"BPF", "hostPorts":null}}}'
-
-# Patch kube-proxy (disable kube-proxy)
-kubectl patch ds -n kube-system kube-proxy -p '{"spec":{"template":{"spec":{"nodeSelector":{"non-calico": "true"}}}}}'
-

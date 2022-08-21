@@ -3,7 +3,6 @@
 
 IMAGE_NAME = "ubuntu/focal64"
 #IMAGE_NAME = "ubuntu/jammy64"
-#IMAGE_NAME = "aspyatkin/ubuntu-20.04-server" # Minimal server install
 N = 5
 
 Vagrant.configure("2") do |config|
@@ -37,8 +36,6 @@ Vagrant.configure("2") do |config|
         master.vm.hostname = "controller-0#{i}"
         master.vm.provision "ansible" do |ansible|
             ansible.playbook = "playbooks/controlplane-playbook.yml"
-            #ansible.playbook = "playbooks/master-v1.24-playbook.yml"
-            #ansible.playbook = "playbooks/master-v1.21-playbook.yml"
             ansible.extra_vars = {
               #node_ip: "192.168.60.1#{i + 30}",
               node_ip: "10.0.1.1#{i + 30}",
@@ -49,17 +46,13 @@ Vagrant.configure("2") do |config|
 
     (1..N).each do |i|
         config.vm.define "worker-0#{i}" do |worker|
-        #if Vagrant.has_plugin?("vagrant-vbguest")
         config.vbguest.auto_update = false
-        #end
             worker.vm.box = IMAGE_NAME
             worker.vm.network "private_network", ip: "192.168.60.1#{i + 33}"
             worker.vm.hostname = "worker-0#{i}"
             worker.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 33}"
             worker.vm.provision "ansible" do |ansible|
                 ansible.playbook = "playbooks/worker-playbook.yml"
-                #ansible.playbook = "playbooks/worker-v1.24-playbook.yml"
-                #ansible.playbook = "playbooks/worker-v1.21-playbook.yml"
                 ansible.extra_vars = {
                   #node_ip: "192.168.60.1#{i + 33}",
                   node_ip: "10.0.1.1#{i + 33}",
@@ -68,5 +61,4 @@ Vagrant.configure("2") do |config|
         end
     end
 end
-
 
