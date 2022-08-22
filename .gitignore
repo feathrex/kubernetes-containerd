@@ -151,4 +151,4 @@ files/*.iso
 scripts/
 definitions/
 *.txt
-playbooks/old
+playbooks/old/
