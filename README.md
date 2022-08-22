@@ -6,3 +6,7 @@
   - Private Network 192.168.60.xxx
   - Public Network 10.0.1.xxx
   - Calico Pod Network CIDR 10.240.0.0/16
+
+### Ansible Playbooks Used To Build Kubernetes Cluster
+  - playbooks/controlplane-playbook.yml
+  - playbooks/worker-playbook.yml
