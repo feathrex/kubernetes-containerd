@@ -3,24 +3,19 @@
 all:
   vars:
     ansible_user: vagrant
-    #ansible_ssh_private_key_file: ~/.vagrant.d/insecure_private_key
   children:
-    nodes:
+    cluster:
       hosts:
         controller-01:
-          # ONLY NEEDED IF DNS/HOSTS ENTRY NOT PRESENT
-          #ansible_host: 10.0.1.131
-        #controller-02:
-          #ansible_host: 10.0.1.132
-        #controller-03:
-          #ansible_host: 10.0.1.133
         worker-01:
-          #ansible_host: 10.0.1.134
         worker-02:
-          #ansible_host: 10.0.1.135
         worker-03:
-          #ansible_host: 10.0.1.136
         worker-04:
-          #ansible_host: 10.0.1.137
         #kubelb-01:
-          #ansible_host: 10.0.1.130
+    workers:
+      hosts:
+        worker-01:
+        worker-02:
+        worker-03:
+        worker-04:
+...
