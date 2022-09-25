@@ -115,153 +115,224 @@ Kubernetes
     cluster events (e.g. starting up a new pod whe a replication controller's
     replicas field is unsatisfied.)
 
-    kube-apiserver
-      Primary management component for kubernetes.
-      Entrypoint to K8S cluster
-        UI/API/CLI access via api-server
-        runs on port 6443
-        responsible for orchestration of all operations within the cluster
+  kube-apiserver
+    Primary management component for kubernetes.
+    Entrypoint to K8S cluster
+    UI/API/CLI access via api-server
+    runs on port 6443
+    responsible for orchestration of all operations within the cluster
 
-      kube-apiserver is the only process/service that interacts with the ETCD cluster
+    kube-apiserver is the only process/service that interacts with the ETCD cluster
 
-      Steps taken by the API-server to create a pod:
-      1) Authenticate User
-      2) Validate Request
-      3) Retrieve data
-      4) Update ETCD (only kube-apiserver interacts with etcd)
-      5) Scheduler
-      6) Kubelet
+    Steps taken by the API-server to create a pod:
+    1) Authenticate User by the api-server
+    2) Validate Request by the api-server
+    3) Retrieve data from etcd
+    4) Update ETCD (only kube-apiserver interacts with etcd)
+    5) Scheduler identifies the correct worker node to place the pod on
+       The scheduler communicates back to the api-server which then updates
+       etcd.
+    6) Kubelet running on the node specified by the scheduler is notified by
+       the api-server, then the kubelet creates the pod on the node and instructs
+       container runtime engine to deploy the application image.
+       The kublet then notifies the api-server that the pod has been created, then
+       the api-server updates the information in etcd.
 
 
-    etcd (separate piece of software not part of kubernetes.io)
-      A distributed Key:value database. Current state of K8S cluster.
 
-      CRITICAL.
+  etcd (separate piece of software not part of kubernetes.io)
+    ETCD is a distributed reliable key-value store that is Simple,
+    Secure and Fast.
 
-        What is a key value store?
-          Stores data in key:value pairs.
-          Can't have duplicate keys.
-          Strongly consistent
-          Used to store and retrieve small amts of data such as configuration data
-          that requires fast read and writes.
-          Can't be used as a replacement for a tabular/relation DB.
-          Stores information about:
-            nodes
-            pods
-            configs
-            secrets
-            accounts
-            roles
-            bindings
-            OTHERS
+    Holds current state of K8S cluster.
 
-      # TO CONNECT TO ETCD POD:
-      kubectl exec --stdin --tty etcd-k8s-master -n kube-system  -- /bin/sh
+    CRITICAL.
 
-      runs on ports 2379, 2380 and 2381
-      stores information about the kubernetes cluster
-      etcd is a distributed reliable key-value store that is simple, secure
-      and fast.
+    What is a key value store?
+      Stores data in key:value pairs.
+      Can't have duplicate keys.
+      Strongly consistent
+      Used to store and retrieve small amts of data such as configuration data
+      that requires fast read and writes.
+      Can't be used as a replacement for a tabular/relation DB.
+      Stores information about:
+        nodes
+        pods
+        configs
+        secrets
+        accounts
+        roles
+        bindings
+        OTHERS
 
-      To write data use:
-        etcdctl set key1 value1
+    # TO CONNECT TO ETCD POD:
+    kubectl exec --stdin --tty etcd-k8s-master -n kube-system  -- /bin/sh
 
-      To retrieve data use:
-        etcdctl get key1
+    To list ETCD keys:
+    kubectl exec --stdin --tty etcd-controller-01 -n kube-system  -- etcdctl get / --prefix --keys-only
 
-      RAFT protocol
+    runs on ports 2379, 2380 and 2381
+    stores information about the kubernetes cluster
+    etcd is a distributed reliable key-value store that is simple, secure
+    and fast.
 
-      etcd directory structure
+    To write data use:
+      etcdctl set key1 value1
 
-        Registry (root directory of etcd)
+    To retrieve data use:
+      etcdctl get key1
 
-                    minions
-                    pods
-                    ReplicaSets
-                    deployments
-                    roles
-                    secrets
+    RAFT protocol
 
-      To find etcd configuration:
-        kubeadm install:
-          kubectl describe pods --namespace=kube-system etcd-controller-01 (this name will be different
-          depending on the cluster setup)
+    etcd directory structure
 
-          cat /etc/kubernetes/manifests/etcd.yaml
+      Registry (root directory of etcd)
 
-          ps -ef|grep kube-apiserver
+        minions
+        pods
+        ReplicaSets
+        deployments
+        roles
+        secrets
 
-      Basic etcdctl commands:
+    To find etcd configuration:
+    kubeadm install:
 
-      List all keys in etcd (note that myetcdctl is an alias that I use)
+      kubectl describe pods --namespace=kube-system etcd-controller-01 (this name will be different
+      depending on the cluster setup)
+
+        cat /etc/kubernetes/manifests/etcd.yaml
+
+    Basic etcdctl commands:
+
+    List all keys in etcd (note that myetcdctl is an alias that I use)
       myetcdctl get / --prefix --keys-only
 
-      List users:
+    List users:
       myetcdctl get / users
 
+    For HA ETCD in the /etc/kubernetes/mainfest/etcd.yaml file
+      --initial-cluster controller-0=https://${CONTROLLER0_IP}:2380,controller-1=https://${CONTROLLER1_IP}:2380
+      --initial-cluster-state new
 
-    kube-scheduler
+    Basic ETCD Commands
+      etcdctl snapshot save
+      etcdctl endpoint health
+      etcdctl get
+      etcdctl put
 
-      Ensures pod placement on nodes in cluster based on node resources i.e.
-      CPU/Memory, etc.. runs on port 10259
+    Full command including cert paths for etcdctl
 
-      Responsible for scheduling applications/containers on worker nodes.
+    ETCDCTL_API=3 etcdctl --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt \
+                          --key=/etc/kubernetes/pki/etcd/server.key member list
 
-      Is not responsible for starting the pods only placement of pods on
-      which nodes.
+  kube-controller-manager
 
-      The scheduler goes through two phases in determining pod placement.
-        Filter Nodes:
-        1. Filter nodes out that don't fit physical requirements i.e.
-           memory/cpu for the pods.
+    Keeps overview of what's happening in the cluster. i.e. container restart
+    runs on port 10257
+    checks to see if desired state == actual state
 
-        Rank Nodes:
-        2. Rank nodes from 0 to 10 after placing the pod on the node.
+    continuiously monitors the state of pods and the nodes w/in the cluster
+    through the apiserver
 
-        Also consider resource requirements and limits.
+    Watch status
+    Remediate Situation
 
+    Node Controller
+      Node Monitor Period is 5 seconds
+      Node Monitor Grace Period is 40 seconds
+      POD eviction timeout is 5 minutes
 
-      Taints and Tolerations
-
-        Sets restrictions on which pods can be scheduled to run on a node.
-        Tells node to only accept pods with a certain toleration
-        Taints are set on nodes in a cluster.
-        Tolerations are set on pods.
-
-        By default no pod has any set tolerations.
-
-        To remove the taint from the master/controlplane node:
-        kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-
+    Replication Controller (older depricated need to use replicaSet instead)
+      Monitors the status of replicatSets ensuring that desired number of pods
+      are available at all times within the set.
+      If a pods dies the replication controller will create another pod.
 
 
-      Node selectors/Affinity
+    Many other types of controllers such as:
+      Deployment Controller
+      Namespace Controller
+      Endpoint Controller
+      Stateful-Set
+      PV-Protection Controller
+      Service Account Controller
+      Cronjob
+      Job-controller
+      Service-Account Controller
+      PV-Binder-Controller
+      PV-Protection-Controller
+      ....
 
-        Selectors:
+      All of these controllers listed above are part of the kube-controller-manager
+      process.
+      By default all controllers are enabled by default. You can configure which
+      controllers are enabled.
+
+    cloud-controller-manager
+      Handles interaction with underlying cloud providers.
+
+  kube-scheduler
+
+    Ensures pod placement on nodes in cluster based on node resources i.e.
+     CPU/Memory, etc.. runs on port 10259
+
+    Responsible for scheduling applications/containers on worker nodes.
+
+    Is not responsible for starting the pods only placement of pods on
+    which nodes.
+
+    The scheduler goes through two phases in determining pod placement.
+      Filter Nodes:
+      1. Filter nodes out that don't fit physical requirements i.e.
+         memory/cpu for the pods.
+
+      Rank Nodes:
+      2. Rank nodes from 0 to 10 after placing the pod on the node.
+
+      Also consider resource requirements and limits.
+
+
+    Taints and Tolerations
+
+      Sets restrictions on which pods can be scheduled to run on a node.
+      Tells node to only accept pods with a certain toleration
+      Taints are set on nodes in a cluster.
+      Tolerations are set on pods.
+
+      By default no pod has any set tolerations.
+
+      To remove the taint from the master/controlplane node:
+      kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-
+
+
+    Node Selectors/Affinity
+
+      Selectors:
         To restrict a pod to run on a particular node.
         Can't use advaced expressions like OR or NOT:
-          example: Large OR Medium?
-                  NOT Small
+        example: Large OR Medium?
+                NOT Small
 
-        To ensure pods are hosted on particular nodes.
+      To ensure pods are hosted on particular nodes.
 
-        Affinity:
+      Affinity:
         Can use operators like: In, NotIn, Exists, DoesNotExist, Gt, Lt
 
 
-      Resource Requirements
+    Resource Requirements and Limits
 
-        Default resource limits for the entire cluster can be set in the LimitRange
-        namespace. Specifically mem-limit-range and cpu-limit-range
+      Default resource limits for the entire cluster can be set in the LimitRange
+      namespace. Specifically mem-limit-range and cpu-limit-range
 
-        CPU:
-          Minimum value is 1m or 0.1 == 100m (milli)
-          1 CPU is one vCPU
-          Default for K8S is 1 vCPU per container
-          A pod can NOT use more CPU resources than it's limit.
+      CPU:
+        Minimum value is 1m or 0.1 == 100m (milli)
+        1 CPU is one vCPU
+        Default for K8S is 1 vCPU per container
+        A pod can NOT use more CPU resources than it's limit.
 
-        Memory:
-          256Mi
-          A pod CAN use more memory resources than it's limit.
+      Memory:
+        256Mi
+        A pod CAN use more memory resources than it's limit.
 
         1G (Gigabyte) = 1,000,000,000 bytes
         1M (Megabyte) = 1,000,000 bytes
@@ -271,27 +342,27 @@ Kubernetes
         1Mi (Mebibytes) = 1,048,576 bytes or 2^20
         1Ki (kibibytes) = 1,024 bytes 2^10
 
-        spec:
-          containers:
-          - name: simple-web
-            image: simple-web
-            ports:
-              - containerPort: 8080
-            resources:
-              requests:
-                memory: "1Gi"
-                cpu: 4
-              limits:
-                memory: "2Gi"
-                cpu: 8
+      spec:
+        containers:
+        - name: simple-web
+          image: simple-web
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: 4
+            limits:
+              memory: "2Gi"
+              cpu: 8
 
 
-      Manual Scheduling
-        Must set nodeName to a value in the YAML definition file at creation time,
-        Or the pod will be in a PENDING state.
+    Manual Scheduling
+      Must set nodeName to a value in the YAML definition file at creation time,
+      Or the pod will be in a PENDING state.
 
 
-      Multiple Schedulers
+    Multiple Schedulers
 
       IMPORTANT when creating a custom scheduler the option --leader-elect MUST be
       set to false.
@@ -304,110 +375,63 @@ Kubernetes
       schedulerName to the name of the custom scheduler under containers dictionary.
 
 
-    kube-controller-manager
 
-      Keeps overview of what's happening in the cluster. i.e. container restart
-      runs on port 10257
-      checks to see if desired state == actual state
+  kubelet
+    Runs on each worker node. Port 10250
+    The 'captain' on the ship.
+    Listens for instructions from the api-server on port 10250
+    Registers a worker node with a kubernetes cluster
+    Requests the container runtime engine to pull the required image
+    Creates/Manages containers/pods.
+    Monitors nodes and Pods.
+    Configuration files are located under:
+      /etc/kubernetes
+      /var/lib/kubelet
 
-      continuiously monitors the state of pods and the nodes w/in the cluster
-      through the apiserver
+    cAdvisor a sub-component of kubelet responsible for collecting performance
+    metrics from pods.
 
-      Watch status
-      Remediate Situation
+    To enable Metrics Server:
+    git clone https://github.com/kubernetes-incubator/metrix-serve
+    Then kubectl create -f deploy/1.8+/
 
-      Node Controller
-        Node Monitor Period is 5 seconds
-        Node Monitor Grace Period is 40 seconds
-        POD eviction timeout is 5 minutes
+    To view performance: kubectl top node, kubectl top pod
 
-      Replication Controller (older depricated need to use replicaSet instead)
-        Monitors the status of replicatSets ensuring that desired number of pods
-        are available at all times within the set.
+  kube-proxy
+    Looks for new services
+    Manages communication for services between nodes within the cluster.
+    Manages communication between pods
+    Uses IPtables rules to forward traffic to correct pod
+    Pod network is a flat virtual network. All pods and services can communicate
+    with each other. Exceptions are if you've implemented network policies.
 
+  Network overlay (calico, etc.)
 
-      Many other types of controllers such as:
-        Deployment Controller
-        Namespace Controller
-        Endpoint Controller
-        Stateful-Set
-        PV-Protection Controller
-        Service Account Controller
-        Cronjob
-        Job-controller
-        Service-Account Controller
-        PV-Binder-Controller
-        PV-Protection-Controller
-        ....
-
-        All of these controllers listed above are part of the kube-controller-manager
-        process.
-        By default all controllers are enabled by default. You can configure which
-        controllers are enabled.
-
-      cloud-controller-manager
-        Handles interaction with underlying cloud providers.
+    Default encapsulation is IP-in-IP.
+    Uses BGP (Border Gateway Protocol) to share and exchange routing information b/w
+    nodes to facilitate POD network communcation.
 
 
-    kube-proxy
-      Looks for new services
-      Manages communication for services between nodes within the cluster.
-      Manages communication between pods
-      Uses IPtables rules to forward traffic to correct pod
-      Pod network is a flat virtual network. All pods and services can communicate
-      with each other.
+  coredns (DNS)
 
 
-    kubelet
-      Runs on each worker node. Port 10250
-      The 'captain' on the ship.
-      Listens for instructions from the api-server on port 10250
-      Registers a worker node in a kubernetes cluster
-      Creates/Manages containers/pods.
-      Monitors nodes and Pods.
-      Configuration files are located under:
-        /etc/kubernetes
-        /var/lib/kubelet
-
-      cAdvisor a sub-component of kubelet responsible for collecting performance
-      metrics from pods.
-
-      To enable Metrics Server:
-      git clone https://github.com/kubernetes-incubator/metrix-serve
-      Then kubectl create -f deploy/1.8+/
-
-      To view performance: kubectl top node, kubectl top pod
+  Other addon services:
+  WebUI aka dashboard
+  cluster level logging
+  container resource monitoring
 
 
-    Network overlay (calico, etc.)
+  Pods Running On The Control Plan
 
-      Default encapsulation is IP-in-IP.
-      Uses BGP (Border Gateway Protocol) to share and exchange routing information b/w
-      nodes to facilitate POD network communcation.
-
-
-
-
-    coredns (DNS)
-
-
-    Other addon services:
-    WebUI aka dashboard
-    cluster level logging
-    container resource monitoring
-
-
-    Pods Running On The Control Plan
-
-      etcd: the etcd server
-      kube-apiserver: the API server
-      kube-controller-manager and kube-scheduler are the control plan components
-      coredns: provides DNS-based service discovery
-      kube-proxy: is the per-node component managing port mappings, etc..
-      <net name> : is optional (per node) component managing the network overlay
-      the READY column indicates the number of containers in each pod
-      Note: this only shows containers you won't see host services
-      Also Note: you may see different namespaces depending on setup
+    etcd: the etcd server
+    kube-apiserver: the API server
+    kube-controller-manager and kube-scheduler are the control plan components
+    coredns: provides DNS-based service discovery
+    kube-proxy: is the per-node component managing port mappings, etc..
+    <net name> : is optional (per node) component managing the network overlay
+    the READY column indicates the number of containers in each pod
+    Note: this only shows containers you won't see host services
+    Also Note: you may see different namespaces depending on setup
 
 
   CNI (Container Network Interface)
@@ -645,22 +669,21 @@ Kubernetes Components
                                       Ignored by the kube-scheduler
 
 
+  Kubernetes Kind List:
 
-Kubernetes Kind List:
-
-  Kind                                                Version
-  pod                                                 v1
-  namespace                                           v1
-  ReplicationController (manages pods)                v1
-  StatefulSet                                         apps/v1
-  DaemonSet                                           apps/v1
-  Service                                             v1
-  ConfigMap                                           v1
-  Volume                                              v1
-  NetworkPolicy
-  StorageClass                                        storage.k8s.io/v1
-  PersistentVolume                                    v1
-  PersistentVolumeClaim                               v1
+    Kind                                                Version
+    pod                                                 v1
+    namespace                                           v1
+    ReplicationController (manages pods)                v1
+    StatefulSet                                         apps/v1
+    DaemonSet                                           apps/v1
+    Service                                             v1
+    ConfigMap                                           v1
+    Volume                                              v1
+    NetworkPolicy
+    StorageClass                                        storage.k8s.io/v1
+    PersistentVolume                                    v1
+    PersistentVolumeClaim                               v1
 
 
   Services
