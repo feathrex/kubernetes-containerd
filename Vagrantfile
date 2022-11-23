@@ -15,6 +15,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "kubelb-01" do |kubelb|
       kubelb.vm.box = IMAGE_NAME
+      #kubelb.vm.box_version = "20220610.0.0"
+      #kubelb.vm.box_version = "20211001.0.0"
       kubelb.vm.network "private_network", ip: "192.168.60.130"
       kubelb.vm.hostname = "kubelb-01"
       kubelb.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.130"
@@ -31,6 +33,8 @@ Vagrant.configure("2") do |config|
       config.vm.define "controller-0#{i}" do |master|
         config.vm.synced_folder ".", "/vagrant", disabled: false
         master.vm.box = IMAGE_NAME
+        #master.vm.box_version = "20220610.0.0"
+        #master.vm.box_version = "20211001.0.0"
         master.vm.network "private_network", ip: "192.168.60.1#{i + 30}"
         master.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 30}"
         master.vm.hostname = "controller-0#{i}"
@@ -48,6 +52,8 @@ Vagrant.configure("2") do |config|
         config.vm.define "worker-0#{i}" do |worker|
         config.vbguest.auto_update = false
             worker.vm.box = IMAGE_NAME
+            #worker.vm.box_version = "20220610.0.0"
+            #worker.vm.box_version = "20211001.0.0"
             worker.vm.network "private_network", ip: "192.168.60.1#{i + 33}"
             worker.vm.hostname = "worker-0#{i}"
             worker.vm.network :public_network, bridge: "enp39s0", ip: "10.0.1.1#{i + 33}"

@@ -6,13 +6,13 @@
   with_items:
     - "{{ controlplane_packages }}"
 
-- name: Install stern
-  get_url:
-    url: https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
-    dest: /usr/local/bin/stern
-    owner: root
-    group: root
-    mode: '0755'
+#- name: Install stern
+# get_url:
+#   url: https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
+#   dest: /usr/local/bin/stern
+#   owner: root
+#   group: root
+#   mode: '0755'
 
 - name: Download Helm Install Script
   get_url:
@@ -76,19 +76,36 @@
         --key=/etc/kubernetes/pki/etcd/server.key --cert=/etc/kubernetes/pki/etcd/server.crt
       }
 
-- name: Install calico pod network
-  become: false
-  shell: kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+- name: Get latest version of Calico YAML file
+  get_url:
+    url: "{{ calico_url }}"
+    dest: /vagrant/calico-operators/calico.yaml
+    backup: true
+    force: true
+    owner: vagrant
+    group: vagrant
+    mode: '0755'
   when: ansible_facts['hostname'] == "controller-01"
 
-- name: Create Calico Resources
+- name: Install calico pod network
   become: false
-  shell: kubectl create -f /vagrant/calico-operators/calico-custom-resources.yml
+  # When using the OPERATOR option to install calico with VXLAN overlay
+  #shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.3/manifests/tigera-operator.yaml
+  #shell: kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+  #
+  # When using the MANIFEST Option to install calico with IPIP overlay
+  shell: kubectl apply -f /vagrant/calico-operators/calico.yaml
   when: ansible_facts['hostname'] == "controller-01"
+
+# To be used when creating resources with Operator instead of Manifest for VXLAN overlay
+#- name: Create Calico Resources
+# become: false
+# shell: kubectl create -f /vagrant/calico-operators/calico-custom-resources.yml
+# when: ansible_facts['hostname'] == "controller-01"
 
 - name: Install kubectl-calico kubectl plugin
   get_url:
-    url: https://github.com/projectcalico/calico/releases/download/v3.23.2/calicoctl-linux-amd64
+    url: "{{ kubectl_calico_url }}"
     dest: /usr/local/bin/kubectl-calico
     owner: root
     group: root

@@ -109,6 +109,16 @@ Kubernetes
 
   APIs are declaritive not imperative.
 
+  Kubernetes objects are persistent entities in the Kubernetes system.
+  Kubernetes uses these entities to represent the state of your cluster.
+    What containerized applications are running and on which nodes.
+    The resources available to those applications.
+    The policies around how those applications behave, such as restart
+    policies, upgrades, and fault-tolerance.
+
+  A kubernetes object is a record of intent once the object is created kubernetes
+  will constantly work to ensure that object exists.
+
   Control Plane
     A set of services that control the kubernetes cluster.
     Makes global decisions about the cluster and detect and respond to
@@ -247,7 +257,8 @@ Kubernetes
       Monitors the status of replicatSets ensuring that desired number of pods
       are available at all times within the set.
       If a pods dies the replication controller will create another pod.
-
+      Provides high availability for applications.
+      Also used for load balancing and scaling.
 
     Many other types of controllers such as:
       Deployment Controller
@@ -299,10 +310,30 @@ Kubernetes
       Taints are set on nodes in a cluster.
       Tolerations are set on pods.
 
+      To taint a node:
+
+        kubectl taint nodes "node-name" key=value:taint-effect
+
+        For example:
+
+        kubectl taint nodes node1 app=blue:NoSchedule
+
+      There are three taint effects:
+
+        NoSchedule - Pods will not be scheduled on the node
+        PreferNoSchedule - The scheduler will try to not schedule pods on the node
+        NoExecute - New pods will be not be scheduled on the node and any pods running
+                    on the node that don't tolerate the taint will be evicted.
+
       By default no pod has any set tolerations.
 
       To remove the taint from the master/controlplane node:
-      kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-
+
+        kubectl taint node k8s-master node-role.kubernetes.io/master:NoSchedule-  <-- The - is very IMPORTANT
+
+      To add a toleration for a specific taint:
+
+        kubectl
 
 
     Node Selectors/Affinity
@@ -311,18 +342,50 @@ Kubernetes
         To restrict a pod to run on a particular node.
         Can't use advaced expressions like OR or NOT:
         example: Large OR Medium?
-                NOT Small
+                 NOT Small
 
       To ensure pods are hosted on particular nodes.
 
       Affinity:
-        Can use operators like: In, NotIn, Exists, DoesNotExist, Gt, Lt
+        Can use operators like:
+          In
+          NotIn
+          Exists
+          DoesNotExist
+          Gt
+          Lt
+
+      Node Affinity Types:
+
+        Type 1: preferredDuringSchedulingIgnoredDuringExecution
+        Type 2: requiredDuringSchedulingIgnoredDuringExecution
+        Type 3: requiredDuringSchedulingRequiredDuringExecution
+
+                  DuringScheduling    DuringExecution
+        Type 1    Required              Ignored
+        Type 2    Preferred             Ignored
+        Type 3    Required              Required
+
+
+    Taints and Tolerations vs Node Affinity
 
 
     Resource Requirements and Limits
 
       Default resource limits for the entire cluster can be set in the LimitRange
       namespace. Specifically mem-limit-range and cpu-limit-range
+
+
+      Resource Requests
+        Are the minimum amount of cpu/memory/disk needed for each container in the pod
+        to run
+
+      Resource Limits
+        Are the maximum amount of cpu/memory/disk allowed for each container in the pod
+        to run
+
+      The LimitRange K8S object can be created to limit the compute resources within
+      a given namespace.
 
       CPU:
         Minimum value is 1m or 0.1 == 100m (milli)
@@ -376,34 +439,36 @@ Kubernetes
 
 
 
-  kubelet
-    Runs on each worker node. Port 10250
-    The 'captain' on the ship.
-    Listens for instructions from the api-server on port 10250
-    Registers a worker node with a kubernetes cluster
-    Requests the container runtime engine to pull the required image
-    Creates/Manages containers/pods.
-    Monitors nodes and Pods.
-    Configuration files are located under:
-      /etc/kubernetes
-      /var/lib/kubelet
+    kubelet
+      Runs on each worker node. Port 10250
+      The 'captain' on the ship.
+      Listens for instructions from the api-server on port 10250
+      Registers a worker node with a kubernetes cluster
+      Requests the container runtime engine to pull the required image
+      Creates/Manages containers/pods.
+      Monitors nodes and Pods.
+      Configuration files are located under:
+        /etc/kubernetes
+        /var/lib/kubelet
 
-    cAdvisor a sub-component of kubelet responsible for collecting performance
-    metrics from pods.
+      cAdvisor a sub-component of kubelet responsible for collecting performance
+      metrics from pods.
 
-    To enable Metrics Server:
-    git clone https://github.com/kubernetes-incubator/metrix-serve
-    Then kubectl create -f deploy/1.8+/
+      To enable Metrics Server:
+      git clone https://github.com/kubernetes-incubator/metrix-serve
+      Then kubectl create -f deploy/1.8+/
 
-    To view performance: kubectl top node, kubectl top pod
+      To view performance: kubectl top node, kubectl top pod
 
-  kube-proxy
-    Looks for new services
-    Manages communication for services between nodes within the cluster.
-    Manages communication between pods
-    Uses IPtables rules to forward traffic to correct pod
-    Pod network is a flat virtual network. All pods and services can communicate
-    with each other. Exceptions are if you've implemented network policies.
+    kube-proxy
+      Looks for new services and creates rules using IPtables to forward traffic
+      to services..
+      Manages communication for services between nodes within the cluster.
+      Manages communication between pods
+      Uses IPtables rules to forward traffic to correct pod
+      Pod network is a flat virtual network. All pods and services can communicate
+      with each other. Exceptions when you've implemented network policies that
+      restrict network access.
 
   Network overlay (calico, etc.)
 
@@ -471,6 +536,8 @@ Kubernetes
 
   CRI (Container Runtime Interface)
 
+
+
 Kubernetes Components
 
   Node
@@ -483,11 +550,13 @@ Kubernetes Components
 
   Pods (is a definition)
     Smallest deployable unit of computing that can be created and managed by
-    kubernetes. Usually one container per pod, but not always the case.
+    kubernetes.
+
+    Usually one container per pod, but not always the case.
+
+    A pod is a single instance of an application.
 
     An abstraction over a container.
-
-    Smallest object created in a kubernetes cluster.
 
     Each pod has it's own IP address.
 
@@ -564,6 +633,9 @@ Kubernetes Components
     own environment to run it. Basically it makes it so processes that
     run within the namespace can't see or interfere with other processes
 
+    cgroups:
+      Limits the resources a process can use.
+
     Namespaces include:
       Hostname
       Process IDs
@@ -575,7 +647,8 @@ Kubernetes Components
       Simple way to create a process namespace:
         sudo unshare --fork --pid --mount-proc bash
 
-      Default namespaces created when a new kubernetes cluster is created
+  Kubernetes Namespaces
+    Default namespaces created when a new kubernetes cluster is created
 
         kube-system
           Do NOT create or modify in kube-system
@@ -596,77 +669,81 @@ Kubernetes Components
           resources you create are located here unless you create a custom
           namespace
 
-      Why use a namespace?
-        Group resources into namespaces.
-        Multiple teams using same application stack.
-        Blue/Green deployments
-        Limit resources
+    Why use a namespace?
+      Isolation of resources between environments i.e. Prod, Dev, etc..
+      Group resources into namespaces.
+      Each namespace can have their own set of policies defining who can do what.
+      Multiple teams using same application stack.
+      Blue/Green deployments
+      Limit resources
 
-        Characteristics of namespaces?
-          You can't access MOST resources from another namespace.
-          Example, each namespace would need to define their own configMap even
-          if using a shared resource like a database.
-          Secrets.
-          Services can be shared accross namespaces.
-            Example:
-              ...
-              data:    # service name.NAMESPACE #
-              db_url: mysql-service.database
+      Namespace DNS
 
-          Components that can't be created w/in a namespace
-            live globally in a cluster
-            you can't isolate them
+          service Name
+           |
+           |      Namespace
+           |      |    service
+           |      |   |         domain
+           |      |   |        |
+      db-service.dev.svc.cluster.local
 
-            Examples: Volumes, Nodes
+      Characteristics of namespaces?
+        You can't access MOST resources from another namespace.
+        Example, each namespace would need to define their own configMap even
+        if using a shared resource like a database.
+        Secrets.
+        Services can be shared accross namespaces.
+          Example:
+            ...
+            data:    # service name.NAMESPACE #
+            db_url: mysql-service.database
 
-            Lists out all API resources that are not bound by namespaces:
+        Components that can't be created w/in a namespace
+          live globally in a cluster
+          you can't isolate them
 
-              kubectl api-resources --namespaced=false
+          Examples: Volumes, Nodes
 
-            Lists out all API resources that are BOUND by namespaces:
+          Lists out all API resources that are not bound by namespaces:
 
-              kubectl api-resources --namespaced=true
+            kubectl api-resources --namespaced=false
 
-      Change active namespace
-        Use kubens/kubectx
-        Not installed by default in a kubernetes cluster.
+          Lists out all API resources that are BOUND by namespaces:
 
-      Creates a pod in the default namespace:
-      kubectl create -f pod-definition.yml
+            kubectl api-resources --namespaced=true
 
-      Creates a pod in the dev namespace:
-      kubectl create -f pod-definition.yml --namespace=dev
+      Change active namespace to the development namespace permanently:
 
-      or add the namespace definition into the YAML file under the metadata section.
+        kubectl config set-context $(kubectl config current-context) --namespace=development
 
-    cgroups:
-      Limits the resources a process can use.
 
-    Static Pods:
-      Are pods managed directly by the kubelet daemon on a specific node, without
-      the API server observing them.
+  Static Pods:
+    Are pods managed directly by the kubelet daemon on a specific node, without
+    the API server observing them.
 
-      The kubelet daemon periodically checks /etc/kubernetes/manifests for pod
-      configuration files to create a pod.
+    The kubelet daemon periodically checks /etc/kubernetes/manifests for pod
+    configuration files to create a pod.
 
-      If the application crashes the kublet daemon will attempt to restart it.
+    If the application crashes the kublet daemon will attempt to restart it.
 
-      If you remove a configuration file for a pod, the kublet daemon will
-      remove the pod.
+    If you remove a configuration file for a pod, the kublet daemon will
+    remove the pod.
 
-      For kubeadmin installs the staticPodPath will be /etc/kubernetes/mainfests.
-      Check /var/lib/kubelet/config.yaml for staticPodPath
+    For kubeadmin installs the staticPodPath will be /etc/kubernetes/mainfests.
+    Check /var/lib/kubelet/config.yaml for staticPodPath
 
-      Why use static pods?
-        When using the kubeadm tool it uses static pods to build out the control
-        plane components.
+    Can't be used to deploy K8S objects such as deployments, daemonsets or replicasets
 
-      Static Pods vs DaemonSets
+    Why use static pods?
+      When using the kubeadm tool it uses static pods to build out the control
+      plane components.
 
-      Static Pods                                       DaemonSets
-      Created by kubelet                                Created by kube-apiserver (DaemonSet controller)
-      Deploy control plane components as static pods.   Deploy monitoring agents, logging agents on nodes
-                                      Ignored by the kube-scheduler
+    Static Pods vs DaemonSets
+
+    Static Pods                                       DaemonSets
+    Created by kubelet                                Created by kube-apiserver (DaemonSet controller)
+    Deploy control plane components as static pods.   Deploy monitoring agents, logging agents on nodes
+                                                      Ignored by the kube-scheduler
 
 
   Kubernetes Kind List:
@@ -697,6 +774,8 @@ Kubernetes Components
       Enable communication b/w various components within and outside of an
       application. Services help connection applications together with other
       applications and users.
+
+      Services are kubernetes objects that reside in memory.
 
       Pods are ephemeral and are destroyed frequently.
 
@@ -758,6 +837,18 @@ Kubernetes Components
         That port is made available on all our nodes and anybody can connect to it.
         Our code must be changed to connect to the new port number.
 
+        There are three ports involved with NodePort type service:
+          TargetPort is the port running on the POD which the service forwards requests
+          to. If no port number is specified for the TargetPort the Port number will
+          be used.
+
+          Port is the port running on the service. Specifying Port is REQUIRED.
+
+          NodePort which is used to access the service externally. The port number
+          is from 30000 to 32767. If no port number is specified one is automatically
+          assigned from 30000 to 32767.
+
+
       Loadbalancer
         Service becomes available through a cloud provided load balancer think AWS
         ALB.
@@ -801,6 +892,7 @@ Kubernetes Components
     Used to build service discovery
 
     When to use a service:
+
 
   Ingress
     kind: Ingress
@@ -951,6 +1043,49 @@ Kubernetes Components
     Meant specifically for stateful applications like databases.
     Databases are often hosted outside of the K8S cluster.
 
+  Labels and Selectors
+
+    What is a label?
+      Standard method to group K8S objects together.
+      When we create a deployment with kubectl create deployment rng, this
+      deployment gets the LABEL app=rng
+      The replica sets created by this deployment also get the LABEL app=rng
+      The pods created by these replica sets also get the LABEL app=rng
+      When we create the daemon set from the deployment, we re-use the same spec
+      Therefore, the pods created by the daemon set get the same LABELS
+      When we use kubectl run "stuff", the LABEL is run=stuff instead
+
+      Where do labels come from?
+        When we create a deployment with kubectl create deployment rng,
+        this deployment gets the label app=rng
+
+    What is a selector?
+
+      Selectors help to filter K8S objects.
+      Selectors are in the higher level abstractions like replicatSets, DaemonSets,
+      services and deployments.
+
+      Two types of selectors:
+        Equality-based
+        Set-based
+
+      A label selector can be made of multiple requirements which are comma-separated.
+      In the case of multiple requirements, all must be satisfied so the comma separator
+      acts as a logical AND (&&) operator.
+
+    What do labels do?
+
+    What do selectors do?
+      Are the "glue" that connect resources together.
+      A selector is how a service finds pods it's to send connections to.
+
+    To get a list of pods for a specific LABEL use:
+      kubectl get pods -l app=rng
+
+    To get a list of pods for a specific SELECTOR use:
+      kubectl get pods --selector app=rng
+
+
   ReplicaSet
     Makes sure that a given number of identical pods are running across the cluster
     allows for scaling of application rarely used directly
@@ -969,6 +1104,8 @@ Kubernetes Components
       kubectl scale --replicas=6 replicaset "name_of_replicaset"
 
       kubectl apply -f "name_of_file.yml" <-- after updating # of replicas in file.
+
+      kubectl edit replicaset "name_of_replicatset"
 
     Labels and Selectors are KEY for ReplicaSets and allows a ReplicaSet to know
     which pods to monitor in the event of pod failure.
@@ -1137,6 +1274,8 @@ Kubernetes Components
       which are automatically repaired when a problem arises.
 
 
+
+
 Kubernetes Cluster Monitoring
 
   Open Source Monitoring solutions:
@@ -1214,6 +1353,9 @@ YAML File Explained
       Is a dictionary
 
 
+  ###
+  ###IMPORTANT EXAM TIP!!!
+  ###
   TO create YAML template files for pods, deployments, services, replicatSets
 
     pod:
@@ -1224,6 +1366,9 @@ YAML File Explained
 
       # For some reason you can't redirect output of command below to file.
       kubectl create deployment --replicas=4 --image=nginx nginx2 --dry-run=client -o yaml
+
+      # To create a deployment named nginx right away
+      kubectl create deployment nginx --image=nginx
 
 
   status
@@ -1240,6 +1385,7 @@ Secrets:
   - type: "Opaque" is the default value for arbitrary key-vaule pairs, can also use
     different types "SSL", etc..
   - data:  the actual contents in key-value pairs.
+
 
 Service configuration file:
   - kind: "Service"
@@ -1290,76 +1436,24 @@ Ways to create resources
       ...
 
 
-Kubernetes Objects are persistent entities. Kubernetes uses these objects to
-represent the state of the cluster.
-Kubernetes objects specifically describe:
-  What containerized applications are running(and on which nodes)
-  The resources availabile to those applications
-  The policies around how those applications behave, such as restart policies,
-  upgrades and fault-tolerance
+  A kubernetes mainfest must have the following 4 attributes for each resource
+  declared
 
-
-A kubernetes mainfest must have the following 4 attributes for each resource
-declared
-
-kind: ...
-apiVersion: ...
-metadata: ...
-  name: ...
-  ...
-spec:
-  ...
----         <-- separates resources
-kind: ...
-apiVersion: ...
-metadata: ...
-  name: ...
-  ...
-spec:
-  ...
-
-
-Labels and Selectors
-
-  What is a label?
-    When we create a deployment with kubectl create deployment rng, this
-    deployment gets the LABEL app=rng
-    The replica sets created by this deployment also get the LABEL app=rng
-    The pods created by these replica sets also get the LABEL app=rng
-    When we create the daemon set from the deployment, we re-use the same spec
-    Therefore, the pods created by the daemon set get the same LABELS
-    When we use kubectl run "stuff", the LABEL is run=stuff instead
-
-    Where do labels come from?
-      When we create a deployment with kubectl create deployment rng,
-      this deployment gets the label app=rng
-
-
-  What is a selector?
-
-    Selectors are in the higher level abstractions like replicatSets, DaemonSets,
-    services and deployments.
-
-    Two types of selectors:
-      Equality-based
-      Set-based
-
-    A label selector can be made of multiple requirements which are comma-separated.
-    In the case of multiple requirements, all must be satisfied so the comma separator
-    acts as a logical AND (&&) operator.
-
-
-  What do labels do?
-
-  What do selectors do?
-    Are the "glue" that connect resources together.
-    A selector is how a service finds pods it's to send connections to.
-
-  To get a list of pods for a specific LABEL use:
-    kubectl get pods -l app=rng
-
-  To get a list of pods for a specific SELECTOR use:
-    kubectl get pods --selector app=rng
+  kind: ...
+  apiVersion: ...
+  metadata: ...
+    name: ...
+    ...
+  spec:
+    ...
+  ---         <-- separates resources
+  kind: ...
+  apiVersion: ...
+  metadata: ...
+    name: ...
+    ...
+  spec:
+    ...
 
 
 Application Lifecycle Management
@@ -1445,12 +1539,9 @@ Working with ConfigMaps or Secrets
     kubectl describe configmaps
 
 
-
-
-
 Troubleshooting Kubernetes
 
-API Server:
+  API Server:
 
   If the Kubernetes API server is down, you will not be able to use kubectl to
   interact with the cluster.
@@ -1464,13 +1555,14 @@ API Server:
   Make sure docker and kublet services are up and running on your control plane
   node(s)
 
-Checking Node Status
+  Checking Node Status
 
   kubectl get nodes
   kubectl describe node 'node_name'
 
   If a node is having problems, it may be because a service is down on that
   particular node.
+
   Check kublet and container runtime service is running with no errors.
 
     systemctl status kubelet|containerd
@@ -1479,12 +1571,12 @@ Checking Node Status
 
     Check system log files for errors.
 
-Check System Pods
+  Check System Pods
 
   kubectl get pods -n kube-system
   kubectl describe pod 'pod_name' -n kube-system
 
-Cluster and Node Logs
+  Cluster and Node Logs
 
   Service Logs
     journalctl -u kubelet
@@ -1516,6 +1608,27 @@ Network Troubleshooting of Kubernetes
 
     4. tshark command:
        root@worker-01:~# tshark -i cali1e0ad1c2d44 -Y "ip.src == 10.240.182.194 && ip.dst == 10.240.171.3"
+
+  kube-proxy and DNS
+
+    In addition to checking on your kubernetes networking plugin, it may be a good
+    idea to look at kube-proxy and the kubernetes DNS if you're experiencing issues
+    within the kubernetes cluster network.
+
+    In a kubeadm cluster the kubernetes DNS and kube-proxy run as Pods in the
+    kube-system namespace.
+
+  netshoot
+
+    Tip: you can run a container in the cluster that you can use to run commands to
+    test and gather information about network functionality.
+
+    A VERY Good container to use to troubleshoot networking issues is:
+
+    nicolaka/netshoot image is a great tool for this. The image contains a variety
+    of networking exploration and Troubleshooting tools.
+
+    db-service.dev.svc.cluster.local --> service_name.namespace.service.domain
 
 
 Troubleshooting Applications
@@ -1554,30 +1667,6 @@ Troubleshooting Applications
       when showing logs from multiple pods, it mixes them all together
 
     There is a better way to look at container logs
-
-
-Troubleshooting Kubernetes Networking Issues
-
-  kube-proxy and DNS
-
-    In addition to checking on your kubernetes networking plugin, it may be a good
-    idea to look at kube-proxy and the kubernetes DNS if you're experiencing issues
-    within the kubernetes cluster network.
-
-    In a kubeadm cluster the kubernetes DNS and kube-proxy run as Pods in the
-    kube-system namespace.
-
-  netshoot
-
-    Tip: you can run a container in the cluster that you can use to run commands to
-    test and gather information about network functionality.
-
-    A VERY Good container to use to troubleshoot networking issues is:
-
-    nicolaka/netshoot image is a great tool for this. The image contains a variety
-    of networking exploration and Troubleshooting tools.
-
-    db-service.dev.svc.cluster.local --> service_name.namespace.service.domain
 
 
 YAML BASICS
@@ -1621,14 +1710,15 @@ YAML BASICS
   metadata:
     name: awesome-app
 
-Advantages of YAML
-  Using YAML (instead of kubectl run/create/etc..) allows you to be declaritive
-  The YAML describes the desired state of our cluster and applications
-  YAML can be stored, versioned, archived (e.g. git repositories)
-  To change resources, change YAML files (instead of using kubectl, edit/scale
-  /label/etc..)
-  Changes can be reviewd before being applied
-  This workflow is sometimes called "GitOps"
+  Advantages of YAML
+    Using YAML (instead of kubectl run/create/etc..) allows you to be declaritive
+    The YAML describes the desired state of our cluster and applications
+    YAML can be stored, versioned, archived (e.g. git repositories)
+    To change resources, change YAML files (instead of using kubectl, edit/scale
+    /label/etc..)
+    Changes can be reviewd before being applied
+    This workflow is sometimes called "GitOps"
+
 
 Rolling Updates
   Rolling updates can be done on:
@@ -1682,10 +1772,19 @@ Imperative vs Declaritive
       Rollout upgrade to pod image for the nginx-deployment:
       kubectl set image deployment nginx-deployment nginx=nginx:1.18
 
+
+    Updating K8S Objects Part II:
+
+      To open up K8S config in memory in order to perform edits/updates.
+      kubectl edit deployment nginx
+
+      Better way is to update the YAML file with necessary changes then
+      replace the K8S objects:
+
       kubectl replace -f nginx.yaml
       kubectl replace --force -f nginx.yaml
 
-    kubectl delete -f nginx.yaml
+      kubectl delete -f nginx.yaml
 
 
   Declaritive: End state.
@@ -1693,6 +1792,10 @@ Imperative vs Declaritive
 
     Create K8S Objects:
       kubectl apply -f nginx.yaml
+
+    To create K8S objects from multiple config files:
+
+      kubectl apply -f /path/to/config-files/
 
     Update K8S Objects:
       kubectl apply -f nginx.yaml
@@ -1872,7 +1975,7 @@ To get values of keys:
   myetcdctl get / --prefix
 
 
-  #######################################
+#######################################
 # ETCD BACKUP BEGIN
 #######################################
 List Cluster Members:

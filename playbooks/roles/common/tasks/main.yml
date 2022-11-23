@@ -20,9 +20,9 @@
     state: present
   with_items: "{{ os_packages_all }}"
 
-- name: Upgrade the OS (apt-get dist-upgrade)
-  apt:
-    upgrade: dist
+#- name: Upgrade the OS (apt-get dist-upgrade)
+# apt:
+#   upgrade: dist
 
 - name: Install K8S Software Packages VIA Role
   apt:

@@ -1,0 +1,46 @@
+---
+
+- hosts: controller-01
+  become: true
+  gather_facts: false
+
+  vars:
+    #calico_url: https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
+    kubectl_calico_url: https://github.com/projectcalico/calico/releases/download/v3.24.5/calicoctl-linux-amd64
+
+
+  tasks:
+  - name: Check if calico.yaml file exists
+    stat:
+      path: /vagrant/calico-operators/calico.yaml
+    register: calico_file
+
+  - debug:
+      msg: "{{ calico_file }}"
+
+# - name: Make backup copy of calico.yaml
+#   copy:
+#     src: "{{ calico_file }}"
+#     dest: /tmp/"{{ calico_file }}"
+
+
+# - name: Get latest version of Calico YAML file
+#   get_url:
+#     url: "{{ kubectl_calico_url }}"
+#     dest: /vagrant/calico-operators/calico.yaml
+#     backup: true
+#     force: true
+#     owner: vagrant
+#     group: vagrant
+#     mode: '0755'
+#   #when: ansible_facts['hostname'] == "controller-01"
+
+
+  - name: Install kubectl-calico kubectl plugin
+    get_url:
+      url: "{{ kubectl_calico_url }}"
+      dest: /usr/local/bin/kubectl-calico
+      owner: root
+      group: root
+      mode: '0755'
+    #when: ansible_facts['hostname'] == "controller-01"
