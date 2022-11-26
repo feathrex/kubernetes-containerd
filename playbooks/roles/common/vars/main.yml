@@ -5,6 +5,8 @@ k8s_version: 1.25.0-00
 #k8s_version: 1.22.3-00
 #k8s_version: 1.24.3-00
 
+vxlan: false
+
 apt_keys:
   - https://packages.cloud.google.com/apt/doc/apt-key.gpg
   - https://download.docker.com/linux/ubuntu/gpg
