@@ -158,3 +158,4 @@ cka_cert_notes.txt
 cilium_cni_notes.txt
 cluster_notes.txt
 playbooks/join-command
+old/*
