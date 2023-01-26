@@ -10,3 +10,8 @@
 ### Ansible Playbooks Used To Build Kubernetes Cluster
   - playbooks/controlplane-playbook.yml
   - playbooks/worker-playbook.yml
+
+### Update playbooks/roles/common/vars/main.yml to change version(s) of containerd, kubernetes, enable or disable calico network overlay
+  - containerd_version: 1.6.8-1
+  - k8s_version: 1.25.0-00
+
