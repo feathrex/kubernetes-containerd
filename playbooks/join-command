@@ -1,1 +1,0 @@
-kubeadm join 10.0.1.131:6443 --token fz3upa.238q9zn5rmymemqp --discovery-token-ca-cert-hash sha256:5c22b6f2f36679d00bc102c481f33a0c82711ccc1f57b75caa51f51c27bd0366 
