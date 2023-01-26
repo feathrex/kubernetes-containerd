@@ -125,6 +125,19 @@ Kubernetes
     cluster events (e.g. starting up a new pod whe a replication controller's
     replicas field is unsatisfied.)
 
+    Services that make up the control plane:
+
+      kube-apiserver
+      etcd
+      kube-scheduler
+      kube-controller-manager
+        Many types of controller managers available:
+          node-controller
+          replication-controller
+          deployment-controller
+          ...
+
+
   kube-apiserver
     Primary management component for kubernetes.
     Entrypoint to K8S cluster
@@ -531,6 +544,32 @@ Kubernetes
     Some solutions can fill multiple roles
       e.g. kube-router can be setup to provide the pod network and/or network
       policies and/or replace kube-proxy
+
+    A CNI plugin/standard must support CLI arguments ADD/DEL/CHECK
+    A CNI plugin/standard must support parameters like container id, network ns, etc..
+    A CNI plugin/standard must manage IP address assignment to PODs
+    A CNI plugin/standard must return results in a specific format (usually JSON)
+
+    Examples of CNI Plugins:
+      BRIDGE
+      VLAN
+      IPVLAN
+      MACVLAN
+      WINDOWS
+
+    Support for IPAM (IP Address Management) plugins
+      DHCP
+      host-local
+
+    Other examples of CNI Plugins:
+      weaveworks
+      flannel
+      calico
+      cilium
+      VMware NSX
+
+
+    Docker uses a different standard called Container Network Model (CNM)
 
   CSI (Container Storage Interface)
 

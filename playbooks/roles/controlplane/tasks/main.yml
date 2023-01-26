@@ -6,14 +6,6 @@
   with_items:
     - "{{ controlplane_packages }}"
 
-#- name: Install stern
-# get_url:
-#   url: https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
-#   dest: /usr/local/bin/stern
-#   owner: root
-#   group: root
-#   mode: '0755'
-
 - name: Download Helm Install Script
   get_url:
     url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -89,22 +81,12 @@
 
 - name: Install calico pod network with vxlan overlay network
   become: false
-  # When using the OPERATOR option to install calico with VXLAN overlay
-  #shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.3/manifests/tigera-operator.yaml
   shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/tigera-operator.yaml
-  #shell: kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
-  #
-  # When using the MANIFEST Option to install calico with IPIP overlay
-  #shell: kubectl apply -f /vagrant/calico-operators/calico.yaml
-  #shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
-  #when: ansible_facts['hostname'] == "controller-01"
   when: ansible_facts['hostname'] == "controller-01" and vxlan == true
 
-# To be used when creating resources with Operator instead of Manifest for VXLAN overlay
 - name: Create Calico Resources
   become: false
   shell: kubectl create -f /vagrant/calico-operators/calico-custom-resources.yml
-# when: ansible_facts['hostname'] == "controller-01"
   when: ansible_facts['hostname'] == "controller-01" and vxlan == true
 
 - name: Install calico pod network with IPIP overlay network

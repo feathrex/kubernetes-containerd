@@ -152,3 +152,8 @@ scripts/
 definitions/
 *.txt
 playbooks/old/
+
+class_notes.txt
+cka_cert_notes.txt
+cilium_cni_notes.txt
+cluster_notes.txt
