@@ -20,7 +20,7 @@
 - name: Initialize the Kubernetes cluster using kubeadm
   command: kubeadm init --apiserver-advertise-address={{ node_ip }} \
            --apiserver-cert-extra-sans={{ node_ip }}  --node-name={{ ansible_hostname }} \
-           --pod-network-cidr=10.240.0.0/16
+           --pod-network-cidr={{ pod_network_cidr }}
   when: ansible_facts['hostname'] == "controller-01"
 
 - name: Generate join command
@@ -55,7 +55,7 @@
   with_items:
     - 'DATASTORE_TYPE=kubernetes'
     - 'KUBECONFIG=~/.kube/config'
-    - 'KUBERNETES_MASTER=https://10.0.1.131:6443'
+    - 'KUBERNETES_MASTER=https://{{ node_ip }}:6443'
 
 - name: Add myetcdctl alias to my .bashrc
   become: false
