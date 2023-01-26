@@ -1,16 +1,32 @@
 ---
+
 - hosts: all
   become: true
+  
+  vars:
+    host_entries:
+      - '10.0.1.131 controller-01 kube-master'
+      - '10.0.1.132 controller-02'
+      - '10.0.1.133 controller-03'
+      - '10.0.1.134 worker-01'
+      - '10.0.1.135 worker-02'
+      - '10.0.1.136 worker-03'
+      - '10.0.1.137 worker-04'
+      - '10.0.1.130 kubelb-01'
+      - '192.168.60.131 controller-01-priv'
+      - '192.168.60.132 controller-02-priv'
+      - '192.168.60.133 controller-03-priv'
+      - '192.168.60.134 worker-01-priv'
+      - '192.168.60.135 worker-02-priv'
+      - '192.168.60.136 worker-03-priv'
+      - '192.168.60.137 worker-04-priv'
+      - '192.168.60.130 kubelb-01-priv'
 
   tasks:
-  - name: Download Helm Install Script
-    get_url:
-      #src: https://get.helm.sh/helm-v3.7.0-linux-amd64.tar.gz
-      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-      dest: /tmp/get_helm.sh
-      owner: root
-      group: root
-      mode: '0755'
-
-  - name: Execute Helm Install Script
-    command: bash /tmp/get_helm.sh
+  - name: Add /etc/host entries
+    lineinfile:
+      path: /etc/hosts
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - "{{ host_entries }}"
