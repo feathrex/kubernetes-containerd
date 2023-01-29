@@ -81,7 +81,8 @@
 
 - name: Install calico pod network with vxlan overlay network
   become: false
-  shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/tigera-operator.yaml
+  #shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/tigera-operator.yaml
+  shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml
   when: ansible_facts['hostname'] == "controller-01" and vxlan == true
 
 - name: Create Calico Resources
@@ -91,7 +92,8 @@
 
 - name: Install calico pod network with IPIP overlay network
   become: false
-  shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
+  #shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
+  shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/calico.yaml
   when: ansible_facts['hostname'] == "controller-01" and vxlan != true
 
 - name: Install kubectl-calico kubectl plugin
